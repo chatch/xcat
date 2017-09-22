@@ -1,0 +1,57 @@
+{
+  "name": "xcat",
+  "version": "0.0.1",
+  "description": "Cross chain atomic trades (xcat) library and cli",
+  "repository": "chatch/xcat",
+  "license": "GPL-3.0",
+  "author": {
+    "name": "Chris Hatch",
+    "email": "hatch@tuta.io"
+  },
+  "scripts": {
+    "build": "babel src -d lib --copy-files",
+    "build-watch": "babel --watch src -d lib --copy-files",
+    "prepublish": "echo \"reenable 'nsp check'!\"",
+    "pretest": "eslint . --fix",
+    "test": "jest src"
+  },
+  "keywords": [
+    "crosschain",
+    "blockchain",
+    "xcat",
+    "cryptocurrencies",
+    "stellar",
+    "ethereum"
+  ],
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "stellar-sdk": "^0.7.3",
+    "web3-eth": "^1.0.0-beta.20",
+    "web3-utils": "^1.0.0-beta.20"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-jest": "^21.0.2",
+    "babel-preset-env": "^1.6.0",
+    "coveralls": "^2.13.1",
+    "eslint": "^4.1.0",
+    "eslint-config-xo-space": "^0.16.0",
+    "jest": "^21.0.0",
+    "jest-cli": "^21.0.0",
+    "nsp": "^2.6.3"
+  },
+  "files": ["lib"],
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    },
+    "testEnvironment": "node"
+  },
+  "eslintConfig": {
+    "extends": "xo-space",
+    "env": {
+      "jest": true,
+      "node": true
+    }
+  }
+}

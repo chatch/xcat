@@ -1,0 +1,153 @@
+{
+  "deployed": {
+    "ropsten": "0x661335475ca4697da9e8827cbb859834911a040b",
+    "rinkeby": "0x94ac65c50b4b0618bc0ca7d374382f6c9e14d20f"
+  },
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_receiver",
+          "type": "address"
+        },
+        {
+          "name": "_hashlock",
+          "type": "bytes32"
+        },
+        {
+          "name": "_timelock",
+          "type": "uint256"
+        }
+      ],
+      "name": "newContract",
+      "outputs": [
+        {
+          "name": "contractId",
+          "type": "bytes32"
+        }
+      ],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_contractId",
+          "type": "bytes32"
+        },
+        {
+          "name": "_preImage",
+          "type": "bytes32"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_contractId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "refund",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_contractId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContract",
+      "outputs": [
+        {
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "name": "hashlock",
+          "type": "bytes32"
+        },
+        {
+          "name": "timelock",
+          "type": "uint256"
+        },
+        {
+          "name": "withdrawn",
+          "type": "bool"
+        },
+        {
+          "name": "refunded",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "contractId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogNewContract",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "contractId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogContractPayed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "contractId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "LogContractRefunded",
+      "type": "event"
+    }
+  ],
+  "updated_at": 1505643432314
+}
