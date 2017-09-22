@@ -1,4 +1,4 @@
-# Stellar Native XLM to Ethereum Native ETH Token Swaps
+# Stellar XLM to Ethereum ETH Token Swaps
 
 ** DRAFT v0.1**
 
