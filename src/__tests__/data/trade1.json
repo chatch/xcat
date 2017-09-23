@@ -1,0 +1,17 @@
+{
+  "timelock": 1505729032,
+  "commitment":
+    "22bf0b3d38d2bec7226eeafd6571cdd452d34a79fb4e72f98e246d372c6a9855",
+  "stellar": {
+    "token": "XLM",
+    "amount": 20000.0,
+    "depositor": "GADU5GS223ZOY7LRWDE5IQBGMCNI523FCF5CFP2KPMMU3TKLJ7IPHEJU",
+    "withdrawer": "GD3BNTEXZF7IG4OSWDJMCZ4V6N4I6XGEWO5Y6P3FYAZ24ARF2DWV2P3L"
+  },
+  "ethereum": {
+    "token": "ETH",
+    "amount": 1.0,
+    "depositor": "0x7ee7d41559284957f1cd6bd14a658bf985d87ad0",
+    "withdrawer": "0xfc80237acff828e5a69ba27ec506c2296dab2f68"
+  }
+}

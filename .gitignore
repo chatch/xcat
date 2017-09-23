@@ -62,3 +62,6 @@ coverage
 
 # babel transpile destination
 lib
+
+# local config.json - see config.json.template
+config.json

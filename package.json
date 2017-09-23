@@ -8,11 +8,15 @@
     "name": "Chris Hatch",
     "email": "hatch@tuta.io"
   },
+  "config": {
+    "build_cmd": "babel src -d lib --ignore __tests__/* --copy-files"
+  },
   "scripts": {
-    "build": "babel src -d lib --copy-files",
-    "build-watch": "babel --watch src -d lib --copy-files",
+    "build": "$npm_package_config_build_cmd",
+    "build-watch": "$npm_package_config_build_cmd --watch",
+    "cli": "node_modules/babel-cli/bin/babel-node.js src/cli/cli.js",
     "prepublish": "echo \"reenable 'nsp check'!\"",
-    "pretest": "eslint . --fix",
+    "pretest": "eslint src --fix",
     "test": "jest src"
   },
   "keywords": [
@@ -24,6 +28,10 @@
     "ethereum"
   ],
   "dependencies": {
+    "ajv": "^5.2.2",
+    "bluebird": "^3.5.0",
+    "chalk": "^2.1.0",
+    "commander": "^2.11.0",
     "lodash": "^4.17.4",
     "stellar-sdk": "^0.7.3",
     "web3-eth": "^1.0.0-beta.20",

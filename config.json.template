@@ -1,0 +1,8 @@
+{
+  "stellarNetwork": "testnet",
+  "stellarAccountSecret": "<ed25519 secret seed>",
+  "ethereumNetwork": "ropsten",
+  "ethereumRPC": "http://localhost:8545",
+  "ethereumPublicAddress": "<ethereum public address>",
+  "telehashHashname": "<hashname>"
+}

@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`trade throws if trade has a bad ethereum address 1`] = `
+"trade doesn't conform to schema trade.json [
+	message: \\"data.ethereum.withdrawer should match format \\"ethereumPublicAddress\\"\\"
+	raw: [
+  {
+    \\"keyword\\": \\"format\\",
+    \\"dataPath\\": \\".ethereum.withdrawer\\",
+    \\"schemaPath\\": \\"#/properties/ethereum/properties/withdrawer/format\\",
+    \\"params\\": {
+      \\"format\\": \\"ethereumPublicAddress\\"
+    },
+    \\"message\\": \\"should match format \\\\\\"ethereumPublicAddress\\\\\\"\\"
+  }
+]]"
+`;
+
+exports[`trade throws if trade has a bad stellar address 1`] = `
+"trade doesn't conform to schema trade.json [
+	message: \\"data.stellar.depositor should match format \\"stellarPublicAddress\\", data.stellar.depositor should match format \\"stellarFederatedAddress\\", data.stellar.depositor should match exactly one schema in oneOf\\"
+	raw: [
+  {
+    \\"keyword\\": \\"format\\",
+    \\"dataPath\\": \\".stellar.depositor\\",
+    \\"schemaPath\\": \\"#/properties/stellar/properties/depositor/oneOf/0/format\\",
+    \\"params\\": {
+      \\"format\\": \\"stellarPublicAddress\\"
+    },
+    \\"message\\": \\"should match format \\\\\\"stellarPublicAddress\\\\\\"\\"
+  },
+  {
+    \\"keyword\\": \\"format\\",
+    \\"dataPath\\": \\".stellar.depositor\\",
+    \\"schemaPath\\": \\"#/properties/stellar/properties/depositor/oneOf/1/format\\",
+    \\"params\\": {
+      \\"format\\": \\"stellarFederatedAddress\\"
+    },
+    \\"message\\": \\"should match format \\\\\\"stellarFederatedAddress\\\\\\"\\"
+  },
+  {
+    \\"keyword\\": \\"oneOf\\",
+    \\"dataPath\\": \\".stellar.depositor\\",
+    \\"schemaPath\\": \\"#/properties/stellar/properties/depositor/oneOf\\",
+    \\"params\\": {},
+    \\"message\\": \\"should match exactly one schema in oneOf\\"
+  }
+]]"
+`;

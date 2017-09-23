@@ -16,16 +16,29 @@ class Stellar {
     this.server = initServer(sdk, network)
   }
 
-  createHoldingAccountTx(
-    sellerAccount,
-    sellerPublicAddr,
+  async createHoldingAccount(
+    newAccKeypair,
+    sellerKeypair,
     buyerPublicAddr,
     hashX
   ) {
+    const sellerAccount = await this.server.loadAccount(
+      sellerKeypair.publicKey()
+    )
+    const tx = this.createHoldingAccountTx(
+      newAccKeypair,
+      sellerAccount,
+      buyerPublicAddr,
+      hashX
+    )
+    tx.sign(newAccKeypair, sellerKeypair)
+    return this.server.submitTransaction(tx)
+  }
+
+  createHoldingAccountTx(newAccKeypair, sellerAccount, buyerPublicAddr, hashX) {
     const tb = new this.sdk.TransactionBuilder(sellerAccount)
 
     // Op1: Create holding account
-    const newAccKeypair = this.sdk.Keypair.random()
     tb.addOperation(
       this.sdk.Operation.createAccount({
         destination: newAccKeypair.publicKey(),
@@ -62,9 +75,7 @@ class Stellar {
       })
     )
 
-    const tx = tb.build()
-    tx.sign(newAccKeypair, sellerAccount)
-    return tx
+    return tb.build()
   }
 
   /**

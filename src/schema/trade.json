@@ -1,0 +1,66 @@
+{
+  "id": "/Trade",
+  "type": "object",
+  "properties": {
+    "status": {
+      "enum": [
+        "init",
+        "stellar_prepare",
+        "ethereum_prepare",
+        "stellar_withdraw",
+        "ethereum_withdraw",
+        "finalised"
+      ]
+    },
+    "timelock": {"type": "number"},
+    "commitment": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "preimage": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ethereum": {
+      "type": "object",
+      "properties": {
+        "token": {"enum": ["ETH", "OMG", "QTUM"]},
+        "amount": {"type": "number"},
+        "depositor": {
+          "format": "ethereumPublicAddress"
+        },
+        "withdrawer": {
+          "format": "ethereumPublicAddress"
+        },
+        "htlcContractAddr": {
+          "format": "ethereumPublicAddress"
+        }
+      },
+      "required": ["token", "amount", "depositor", "withdrawer"]
+    },
+    "stellar": {
+      "type": "object",
+      "properties": {
+        "token": {"enum": ["XLM", "JPY", "CNY", "BTC"]},
+        "amount": {"type": "number"},
+        "depositor": {
+          "oneOf": [
+            {"format": "stellarPublicAddress"},
+            {"format": "stellarFederatedAddress"}
+          ]
+        },
+        "withdrawer": {
+          "oneOf": [
+            {"format": "stellarPublicAddress"},
+            {"format": "stellarFederatedAddress"}
+          ]
+        },
+        "holdingAccount": {
+          "format": "stellarPublicAddress"
+        }
+      },
+      "required": ["token", "amount", "depositor", "withdrawer"]
+    }
+  },
+  "required": ["timelock", "commitment", "ethereum", "stellar"]
+}

@@ -1,0 +1,9 @@
+{
+  "stellarNetwork": "testnet",
+  "stellarAccountSecret":
+    "SCSI25C5M5WZVU35WLX3XKQQOCSOIKJ6TEADVQ2KERNI5YY3N5JJNOSJ",
+  "ethereumNetwork": "ropsten",
+  "ethereumRPC": "http://localhost:8545/",
+  "ethereumPublicAddress": "0x75af510437F2Ae76590387A09aC4F78634001711",
+  "telehashHashname": "NONE"
+}

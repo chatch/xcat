@@ -1,0 +1,18 @@
+{
+  "id": "/Config",
+  "type": "object",
+  "properties": {
+    "stellarNetwork": {"enum": ["testnet", "public"]},
+    "stellarAccountSecret": {"format": "stellarSecretSeed"},
+    "ethereumNetwork": {"type": "string"},
+    "ethereumRPC": {"format": "URL"},
+    "ethereumPublicAddress": {"format": "ethereumPublicAddress"}
+  },
+  "required": [
+    "stellarNetwork",
+    "stellarAccountSecret",
+    "ethereumNetwork",
+    "ethereumRPC",
+    "ethereumPublicAddress"
+  ]
+}
