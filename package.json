@@ -17,7 +17,8 @@
     "cli": "node_modules/babel-cli/bin/babel-node.js src/cli/cli.js",
     "prepublish": "echo \"reenable 'nsp check'!\"",
     "pretest": "eslint src --fix",
-    "test": "jest src"
+    "test": "jest src",
+    "test-watch": "jest src --watch"
   },
   "keywords": [
     "crosschain",
@@ -32,6 +33,7 @@
     "bluebird": "^3.5.0",
     "chalk": "^2.1.0",
     "commander": "^2.11.0",
+    "human-readable-ids": "^1.0.3",
     "lodash": "^4.17.4",
     "stellar-sdk": "^0.7.3",
     "web3-eth": "^1.0.0-beta.20",
@@ -48,7 +50,9 @@
     "jest-cli": "^21.0.0",
     "nsp": "^2.6.3"
   },
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "jest": {
     "transform": {
       "^.+\\.jsx?$": "babel-jest"

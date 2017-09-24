@@ -48,9 +48,9 @@ class Protocol {
         this.trade.stellar.withdrawer,
         this.trade.commitment
       )
-      .then(receipt => {
+      .then(() => {
         this.trade.stellar.holdingAccount = newAccKeypair.publicKey()
-        return receipt
+        return this.trade.stellar.holdingAccount
       })
   }
 

@@ -18,6 +18,10 @@ const tradeValidator = () => {
 const {validator, ajv} = tradeValidator()
 
 class Trade {
+  static validate(trade) {
+    return validator(trade)
+  }
+
   /**
    * Create a new Trade validating the given JSON / object.
    *
@@ -27,7 +31,7 @@ class Trade {
    */
   constructor(trade) {
     if (typeof trade === 'string') trade = JSON.parse(trade)
-    const valid = validator(trade)
+    const valid = Trade.validate(trade)
     if (!valid)
       throw new Error(
         `trade doesn't conform to schema trade.json [\n` +

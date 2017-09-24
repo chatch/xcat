@@ -25,13 +25,20 @@ program
 
 program.parse(process.argv)
 
-if (!verifyArgTradeFile(tradeJSON)) program.help()
 if (!verifyConfigFile(configJSON)) program.help()
+if (!verifyArgTradeFile(tradeJSON)) program.help()
 
-const trade = new Trade(fileToObj(tradeJSON))
 const config = new Config(fileToObj(configJSON))
+const trade = new Trade(fileToObj(tradeJSON))
 const protocol = new Protocol(config, trade)
-protocol.stellarPrepare().then(receipt => {
-  console.log(`StellarPrepare receipt: ${JSON.stringify(receipt)}`)
-  console.log(trade.toStringPretty())
+console.log(`stell: ${JSON.stringify(trade.stellar)}`)
+console.log(`all: ${trade.toJSONAll()}`)
+protocol.stellarPrepare().then(holdingAcc => {
+  console.log(`StellarPrepare created account: ${holdingAcc}`)
+
+  console.log(`Storing trade ... `)
+  console.log(`Now waiting for the counterparty to issue EthereumPrepare ...`)
+  console.log(
+    `Press Ctrl-C to exit. You can can rejoin later by running "xcat status "`
+  )
 })

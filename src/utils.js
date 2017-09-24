@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import {readFileSync, writeFileSync} from 'fs'
 import {URL} from 'url'
 import stellarSdk from 'stellar-sdk'
 import Web3Utils from 'web3-utils'
@@ -48,16 +49,22 @@ const isUrl = url => {
 const isClassWithName = (cls, name) =>
   hasIn(cls, 'constructor.name') && cls.constructor.name === name
 
+const fileToObj = filename => JSON.parse(readFileSync(filename).toString())
+const objToFile = (filename, data) =>
+  writeFileSync(filename, JSON.stringify(data))
+
 export {
   bufToStr,
   clone,
-  newSecretHashPair,
-  random32,
-  sha256,
+  fileToObj,
   isStellarPublicAddress,
   isStellarSecretSeed,
   isStellarFederatedAddress,
   isEthereumPublicAddress,
   isClassWithName,
   isUrl,
+  newSecretHashPair,
+  objToFile,
+  random32,
+  sha256,
 }

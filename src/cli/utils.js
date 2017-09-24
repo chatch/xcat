@@ -1,12 +1,11 @@
 import chalk from 'chalk'
-import {existsSync, readFileSync} from 'fs'
+import {existsSync} from 'fs'
 
 import Trade from '../trade'
 import Config from '../config'
+import {fileToObj} from '../utils'
 
 const logError = msg => console.error(chalk.red(`\nERROR: ${msg}`))
-
-const fileToObj = filename => JSON.parse(readFileSync(filename).toString())
 
 const verifyArgTradeFile = filename => {
   if (!filename || (typeof filename === 'string' && filename.trim() === '')) {
@@ -15,7 +14,7 @@ const verifyArgTradeFile = filename => {
   }
 
   if (!existsSync(filename)) {
-    logError(`File [${filename}] does not exist.`)
+    logError(`Trade file [${filename}] does not exist.`)
     return false
   }
 
@@ -37,7 +36,7 @@ const verifyConfigFile = filename => {
 
   if (!existsSync(filename)) {
     logError(
-      `File [${filename}] does not exist. Put a config.json in the ` +
+      `Config file [${filename}] does not exist. Put a config.json in the ` +
         `local path OR provide one with --config.`
     )
     return false
@@ -56,7 +55,7 @@ const verifyConfigFile = filename => {
 
 const verifyArgTradeID = id => {
   throw new Error(
-    'not yet implemented - will pull a trade record from a local database'
+    `not yet implemented - will pull a trade record for ${id} from a local database`
   )
 }
 
