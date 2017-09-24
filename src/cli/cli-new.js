@@ -1,10 +1,12 @@
 import program from 'commander'
+import chalk from 'chalk'
 
 import Config from '../config'
 import Protocol from '../protocol'
 import Trade from '../trade'
 
-import {fileToObj, verifyArgTradeFile, verifyConfigFile} from './utils'
+import {verifyArgTradeFile, verifyConfigFile} from './utils'
+import {fileToObj, objToFile} from '../utils'
 
 let configJSON, tradeJSON
 program
@@ -31,14 +33,26 @@ if (!verifyArgTradeFile(tradeJSON)) program.help()
 const config = new Config(fileToObj(configJSON))
 const trade = new Trade(fileToObj(tradeJSON))
 const protocol = new Protocol(config, trade)
-console.log(`stell: ${JSON.stringify(trade.stellar)}`)
-console.log(`all: ${trade.toJSONAll()}`)
-protocol.stellarPrepare().then(holdingAcc => {
-  console.log(`StellarPrepare created account: ${holdingAcc}`)
 
-  console.log(`Storing trade ... `)
-  console.log(`Now waiting for the counterparty to issue EthereumPrepare ...`)
+console.log(`StellarPrepare running ...\n`)
+protocol.stellarPrepare().then(trade => {
+  const tradeFile = `trade-${trade.id}.json`
+  objToFile(tradeFile, trade)
+
   console.log(
-    `Press Ctrl-C to exit. You can can rejoin later by running "xcat status "`
+    `Trade created with ID: ${chalk.bgGreen.white.bold(`${trade.id}`)}\n`
+  )
+
+  console.log(
+    `Send the file ${chalk.bgBlue.white.bold(
+      `./${tradeFile}`
+    )} to the counterparty so they can accept the trade with:\n\n${chalk.bold(
+      ` xcat import ${tradeFile}`
+    )}\n`
+  )
+
+  console.log(
+    `You can check the status and wait for the counterparty to accept with:\n\n` +
+      `${chalk.bold(` xcat status ${trade.id}`)}\n`
   )
 })

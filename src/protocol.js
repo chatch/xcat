@@ -4,6 +4,7 @@ import Promise from 'bluebird'
 import Stellar from './stellar'
 import Ethereum from './ethereum'
 import HTLC from './contracts/HashedTimelock.json'
+import TradeDB from './trade-db'
 import {isClassWithName} from './utils'
 
 const Status = Object.freeze({
@@ -32,10 +33,16 @@ class Protocol {
       throw new Error('instance of Trade required')
     this.config = config
     this.trade = trade
+    this.tradeDB = new TradeDB()
     this.stellar = new Stellar(sdk, config.stellarNetwork)
     this.eth = new Ethereum(config.ethereumRPC, config.ethereumNetwork, HTLC)
   }
 
+  /**
+   * Prepare the stellar side of the trade by creating the holding account.
+   * @return updated trade instance that now has 'stellar.holdingAccount' and
+   *            if newly created an 'id' as well.
+   */
   async stellarPrepare() {
     const newAccKeypair = sdk.Keypair.random()
     const sellerKeypair = sdk.Keypair.fromSecret(
@@ -50,7 +57,8 @@ class Protocol {
       )
       .then(() => {
         this.trade.stellar.holdingAccount = newAccKeypair.publicKey()
-        return this.trade.stellar.holdingAccount
+        this.trade = this.tradeDB.save(this.trade)
+        return this.trade
       })
   }
 

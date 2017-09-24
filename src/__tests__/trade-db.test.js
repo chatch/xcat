@@ -1,5 +1,5 @@
 import expect from 'expect'
-import {unlink} from 'fs'
+import {existsSync, unlinkSync} from 'fs'
 
 import {clone} from '../utils'
 import TradeDB from '../trade-db'
@@ -8,9 +8,13 @@ import testTrade from './data/trade1.json'
 const DEFAULT_DB_PATH = './tradedb.json'
 const TRADE_ID_REGEX = /^[^-]*-[^-]*-[^-]*$/
 
+const deleteIfExists = filename => {
+  if (existsSync(filename)) unlinkSync(filename)
+}
+
 describe('trade-db', () => {
   afterEach(() => {
-    unlink(DEFAULT_DB_PATH)
+    deleteIfExists(DEFAULT_DB_PATH)
   })
 
   it('creates a new db at default path', () => {
@@ -29,5 +33,23 @@ describe('trade-db', () => {
 
     const tradeGet = tradeDB.get(tradeAfter.id)
     expect(tradeGet).toEqual(tradeAfter)
+  })
+
+  it('creates a new db at non default path and can read from it after', () => {
+    const filename = './my_trades_file.json'
+    deleteIfExists(filename) // ensure it doesn't exist
+
+    // new db with one trade
+    const tradeDBNew = new TradeDB(filename)
+    expect(tradeDBNew.db).toEqual({})
+    const savedTrade = tradeDBNew.save(testTrade)
+
+    // check can open the db now and it has the trade
+    const tradeDB = new TradeDB(filename)
+    expect(tradeDB.db).not.toEqual({})
+    const trade = tradeDB.get(savedTrade.id)
+    expect(trade).toEqual(savedTrade)
+
+    deleteIfExists(filename) // ensure it doesn't exist
   })
 })
