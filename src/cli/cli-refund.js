@@ -1,16 +1,13 @@
 import program from 'commander'
+import chalk from 'chalk'
 
 import Config from '../config'
-
 import {fileToObj, verifyConfigFile} from './utils'
 
 let tradeId, configJSON
 program
   .description(
-    `Import a trade with a given trade.json file. Typically this file is ` +
-      `sent from a counterparty who initiated a trade with "trade new". ` +
-      `As with "trade new" this trade.json must conform to the schema in ` +
-      `schema/trade.json.`
+    'Refund if the trade was not completed and the timelock has expired.\n'
   )
   .option(
     '-c, --config <path>',
