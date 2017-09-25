@@ -5,6 +5,8 @@ import Trade from '../trade'
 import Config from '../config'
 import {fileToObj} from '../utils'
 
+const MIN_TIMELOCK_EXPIRY = 3600 // 1 hour
+
 const logError = msg => console.error(chalk.red(`\nERROR: ${msg}`))
 
 const verifyArgTradeFile = filename => {
@@ -59,10 +61,22 @@ const verifyArgTradeID = id => {
   )
 }
 
+const verifyNewTradeTimelock = timelock => {
+  if (timelock < Math.floor(Date.now() / 1000) + MIN_TIMELOCK_EXPIRY) {
+    logError(
+      `Timelock expiry must be at least ${MIN_TIMELOCK_EXPIRY} ` +
+        `seconds in the future`
+    )
+    return false
+  }
+  return true
+}
+
 export {
   fileToObj,
   logError,
   verifyArgTradeFile,
   verifyArgTradeID,
   verifyConfigFile,
+  verifyNewTradeTimelock,
 }

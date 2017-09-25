@@ -18,9 +18,4 @@ describe('protocol', () => {
     expect(protocol.eth).toBeDefined()
     expect(protocol.stellar).toBeDefined()
   })
-
-  it.skip('checks the status trades', () => {
-    //  const protocol = new Protocol(config, trade)
-    //    protocol.checkStatus()
-  })
 })

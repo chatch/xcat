@@ -5,7 +5,11 @@ import Config from '../config'
 import Protocol from '../protocol'
 import Trade from '../trade'
 
-import {verifyArgTradeFile, verifyConfigFile} from './utils'
+import {
+  verifyArgTradeFile,
+  verifyConfigFile,
+  verifyNewTradeTimelock,
+} from './utils'
 import {fileToObj, objToFile, objToStr, sign, strToFile} from '../utils'
 
 const secsToDateStr = secs => new Date(secs * 1000).toString()
@@ -35,6 +39,9 @@ if (!verifyArgTradeFile(tradeJSON)) program.help()
 const config = new Config(fileToObj(configJSON))
 const trade = new Trade(fileToObj(tradeJSON))
 const protocol = new Protocol(config, trade)
+
+// TODO: new trade checks and logic belong in protocol .. move to there.
+if (!verifyNewTradeTimelock(trade.timelock)) program.help()
 
 console.log(`StellarPrepare running ...`)
 protocol.stellarPrepare().then(trade => {
