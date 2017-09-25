@@ -1,21 +1,21 @@
 import Ajv from 'ajv'
 import {
-  isStellarPublicAddress,
-  isStellarFederatedAddress,
-  isEthereumPublicAddress,
   clone,
+  isEthereumPublicAddress,
+  isStellarFederatedAddress,
+  isStellarPublicAddress,
+  objToStr,
 } from './utils'
 const TradeSchema = require('./schema/trade.json')
 
-const tradeValidator = () => {
+const {validator, ajv} = (() => {
   const ajv = new Ajv({allErrors: true})
   ajv.addFormat('stellarPublicAddress', isStellarPublicAddress)
   ajv.addFormat('stellarFederatedAddress', isStellarFederatedAddress)
   ajv.addFormat('ethereumPublicAddress', isEthereumPublicAddress)
   ajv.addSchema(TradeSchema, 'Trade')
   return {validator: ajv.compile(TradeSchema), ajv: ajv}
-}
-const {validator, ajv} = tradeValidator()
+})()
 
 class Trade {
   static validate(trade) {
@@ -36,7 +36,7 @@ class Trade {
       throw new Error(
         `trade doesn't conform to schema trade.json [\n` +
           `\tmessage: "${ajv.errorsText(validator.errors)}"\n` +
-          `\traw: ${JSON.stringify(validator.errors, null, 2)}` +
+          `\traw: ${objToStr(validator.errors)}` +
           `]`
       )
     Object.assign(this, trade)
@@ -58,11 +58,11 @@ class Trade {
     const agr = clone(this)
     delete agr.preimage
     delete agr.status
-    return JSON.stringify(agr, null, 2)
+    return objToStr(agr)
   }
 
   toJSONAll() {
-    return JSON.stringify(this, null, 2)
+    return objToStr(this)
   }
 
   toStringPretty() {

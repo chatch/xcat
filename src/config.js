@@ -1,23 +1,27 @@
 import Ajv from 'ajv'
-import {isStellarSecretSeed, isEthereumPublicAddress, isUrl} from './utils'
+import {
+  isStellarSecretSeed,
+  isEthereumPublicAddress,
+  isUrl,
+  objToStr,
+} from './utils'
 
 const ConfigSchema = require('./schema/config.json')
 
-const configValidator = () => {
-  const opts = {
-    verbose: true,
-    allErrors: true,
-  }
-  const ajv = new Ajv(opts)
+const {validator, ajv} = (() => {
+  const ajv = new Ajv({allErrors: true})
   ajv.addFormat('stellarSecretSeed', isStellarSecretSeed)
   ajv.addFormat('ethereumPublicAddress', isEthereumPublicAddress)
   ajv.addFormat('URL', isUrl) // ajv url format fails  http://localhost so roll our own
   ajv.addSchema(ConfigSchema, 'Config')
   return {validator: ajv.compile(ConfigSchema), ajv: ajv}
-}
-const {validator, ajv} = configValidator()
+})()
 
 class Config {
+  static validate(config) {
+    return validator(config)
+  }
+
   /**
    * Create a new Config and validate the given JSON / object.
    *
@@ -26,12 +30,12 @@ class Config {
    * @throws Error with details if config doesn't conform to schema
    */
   constructor(config) {
-    const valid = validator(config)
+    const valid = Config.validate(config)
     if (!valid)
       throw new Error(
         `config doesn't conform to schema config.json [\n` +
           `\tmessage: "${ajv.errorsText(validator.errors)}"\n` +
-          `\traw: ${JSON.stringify(validator.errors, null, 2)}` +
+          `\traw: ${objToStr(validator.errors)}` +
           `]`
       )
     Object.assign(this, config)

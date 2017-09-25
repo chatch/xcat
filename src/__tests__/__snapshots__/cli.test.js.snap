@@ -11,12 +11,7 @@ exports[`config throws if config has a bad ethereumPublicAddress 1`] = `
     \\"params\\": {
       \\"format\\": \\"ethereumPublicAddress\\"
     },
-    \\"message\\": \\"should match format \\\\\\"ethereumPublicAddress\\\\\\"\\",
-    \\"schema\\": \\"ethereumPublicAddress\\",
-    \\"parentSchema\\": {
-      \\"format\\": \\"ethereumPublicAddress\\"
-    },
-    \\"data\\": \\"0xabcdef\\"
+    \\"message\\": \\"should match format \\\\\\"ethereumPublicAddress\\\\\\"\\"
   }
 ]]"
 `;
@@ -32,12 +27,7 @@ exports[`config throws if config has a bad ethereumRPC 1`] = `
     \\"params\\": {
       \\"format\\": \\"URL\\"
     },
-    \\"message\\": \\"should match format \\\\\\"URL\\\\\\"\\",
-    \\"schema\\": \\"URL\\",
-    \\"parentSchema\\": {
-      \\"format\\": \\"URL\\"
-    },
-    \\"data\\": \\"//notaurl\\"
+    \\"message\\": \\"should match format \\\\\\"URL\\\\\\"\\"
   }
 ]]"
 `;
@@ -53,12 +43,7 @@ exports[`config throws if config has a bad stellarPublicAddress 1`] = `
     \\"params\\": {
       \\"format\\": \\"stellarSecretSeed\\"
     },
-    \\"message\\": \\"should match format \\\\\\"stellarSecretSeed\\\\\\"\\",
-    \\"schema\\": \\"stellarSecretSeed\\",
-    \\"parentSchema\\": {
-      \\"format\\": \\"stellarSecretSeed\\"
-    },
-    \\"data\\": \\"SCABCDEF\\"
+    \\"message\\": \\"should match format \\\\\\"stellarSecretSeed\\\\\\"\\"
   }
 ]]"
 `;
@@ -77,18 +62,7 @@ exports[`config throws if unknown stellarNetwork 1`] = `
         \\"public\\"
       ]
     },
-    \\"message\\": \\"should be equal to one of the allowed values\\",
-    \\"schema\\": [
-      \\"testnet\\",
-      \\"public\\"
-    ],
-    \\"parentSchema\\": {
-      \\"enum\\": [
-        \\"testnet\\",
-        \\"public\\"
-      ]
-    },
-    \\"data\\": \\"private\\"
+    \\"message\\": \\"should be equal to one of the allowed values\\"
   }
 ]]"
 `;
