@@ -49,7 +49,8 @@ const isUrl = url => {
 const isClassWithName = (cls, name) =>
   hasIn(cls, 'constructor.name') && cls.constructor.name === name
 
-const fileToObj = filename => JSON.parse(readFileSync(filename).toString())
+const fileToStr = filename => readFileSync(filename).toString()
+const fileToObj = filename => JSON.parse(fileToStr(filename))
 const strToFile = (filename, str) => writeFileSync(filename, str)
 const objToStr = obj => JSON.stringify(obj, null, 2)
 const objToFile = (filename, obj) => strToFile(filename, objToStr(obj))
@@ -85,6 +86,7 @@ export {
   bufToStr,
   clone,
   fileToObj,
+  fileToStr,
   isStellarPublicAddress,
   isStellarSecretSeed,
   isStellarFederatedAddress,

@@ -9,4 +9,9 @@ program
   .alias('i')
   .command('status <tradeId>', 'Import a trade from a trade.json file')
   .alias('s')
+  .command(
+    'verify <trade.json> <trade.json.sig>',
+    'Verify signature for a trade.json'
+  )
+  .alias('v')
   .parse(process.argv)
