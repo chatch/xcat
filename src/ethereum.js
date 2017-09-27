@@ -4,6 +4,18 @@ import has from 'lodash/has'
 
 const txRetVal = txReceipt => txReceipt.receipt.logs[0].data
 
+const contractArrToObj = c => {
+  return {
+    sender: c[0],
+    receiver: c[1],
+    amount: c[2],
+    hashlock: c[3],
+    timelock: c[4],
+    withdrawn: c[5],
+    refunded: c[6],
+  }
+}
+
 class Ethereum {
   /**
    * Setup web3 and a handle to the HashedTimelock contract
@@ -98,17 +110,7 @@ class Ethereum {
     return this.htlc.methods
       .getContract(contractId)
       .call()
-      .then(c => {
-        return {
-          sender: c[0],
-          receiver: c[1],
-          amount: c[2],
-          hashlock: c[3],
-          timelock: c[4],
-          withdrawn: c[5],
-          refunded: c[6],
-        }
-      })
+      .then(c => contractArrToObj(c))
   }
 }
 

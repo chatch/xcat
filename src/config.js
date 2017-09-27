@@ -1,3 +1,4 @@
+import stellarSdk from 'stellar-sdk'
 import Ajv from 'ajv'
 import {
   isStellarSecretSeed,
@@ -12,7 +13,7 @@ const {validator, ajv} = (() => {
   const ajv = new Ajv({allErrors: true})
   ajv.addFormat('stellarSecretSeed', isStellarSecretSeed)
   ajv.addFormat('ethereumPublicAddress', isEthereumPublicAddress)
-  ajv.addFormat('URL', isUrl) // ajv url format fails  http://localhost so roll our own
+  ajv.addFormat('URL', isUrl) // ajv url format fails "http://localhost" so roll our own
   ajv.addSchema(ConfigSchema, 'Config')
   return {validator: ajv.compile(ConfigSchema), ajv: ajv}
 })()
@@ -39,6 +40,13 @@ class Config {
           `]`
       )
     Object.assign(this, config)
+  }
+
+  /**
+   * Provides Stellar account public address derived from the secret.
+   */
+  get stellarPublicAddress() {
+    return stellarSdk.Keypair.fromSecret(this.stellarAccountSecret).publicKey()
   }
 }
 

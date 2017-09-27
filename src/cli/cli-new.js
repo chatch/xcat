@@ -1,37 +1,78 @@
-import program from 'commander'
 import chalk from 'chalk'
 
 import Config from '../config'
 import Protocol from '../protocol'
 import Trade from '../trade'
-
 import {
+  commander as program,
+  configFileArgOrDefault,
   verifyArgTradeFile,
   verifyConfigFile,
   verifyNewTradeTimelock,
 } from './utils'
 import {fileToObj, objToFile, objToStr, sign, strToFile} from '../utils'
 
+// UTC seconds to localised date string
 const secsToDateStr = secs => new Date(secs * 1000).toString()
 
+/**
+ * Print new trade result details along with commands for continuing the trade.
+ *
+ * @param trade Trade instance
+ * @param tradeFile Path to the trade file to send to counterparty
+ * @param sigFile Path to the trade file signature
+ */
+const printResult = (trade, tradeFile, sigFile) =>
+  console.log(`
+Trade created:
+
++==============================================================+
+=
+=  Id:         ${chalk.bgGreen.white.bold(trade.id)}
+=  Trade file: ${chalk.bgBlue.white.bold(`./${tradeFile}`)}
+=  Signature:  ${chalk.bgBlue.white.bold(`./${sigFile}`)}
+=
++==============================================================+
+
+Send files above to the counterparty. They can verify and accept the trade by:
+
+${chalk.bold(`xcat verify ${tradeFile} ${sigFile}`)} (optional)
+${chalk.bold(`xcat import ${tradeFile}`)}
+
+To check the status and wait for the counterparty to accept run:
+
+${chalk.bold(`xcat status ${trade.id}`)}
+
+If the counterparty does not accept, claim your refund after ${chalk.bgMagenta.white.bold(
+    secsToDateStr(trade.timelock)
+  )} by running:
+
+${chalk.bold(`xcat refund ${trade.id}`)}
+`)
+
+/**
+ *
+ * Main Script
+ *
+ */
+
 let configJSON, tradeJSON
+
 program
   .description(
-    'Initiate a new trade with a given trade.json file.\n' +
-      '\n  The trade.json must conform to the schema in schema/trade.json.\n' +
-      "\n  NOTE: file needs to be hand crafted but we'll provide a builder soon."
+    'Initiate a new trade with a given trade.json file.\n\n' +
+      '  The trade.json must conform to the schema in schema/trade.json.\n\n' +
+      "  NOTE: file needs to be hand crafted but we'll provide a builder soon."
   )
-  .option(
-    '-c, --config <path>',
-    'Config file (see config.json.template). Defaults to ./config.json.'
-  )
+  .optionConfig()
   .arguments('<trade.json>')
   .action(function(jsonFile, options) {
     tradeJSON = jsonFile
     configJSON = options.config
   })
+  .parse(process.argv)
 
-program.parse(process.argv)
+configJSON = configFileArgOrDefault(configJSON)
 
 if (!verifyConfigFile(configJSON)) program.help()
 if (!verifyArgTradeFile(tradeJSON)) program.help()
@@ -52,30 +93,5 @@ protocol.stellarPrepare().then(trade => {
   const sigFile = `${tradeFile}.sig`
   strToFile(sigFile, signature)
 
-  console.log(`
-Trade created:
-
-+==============================================================+
-=
-=  Id:         ${chalk.bgGreen.white.bold(trade.id)}
-=  Trade file: ${chalk.bgBlue.white.bold(`./${tradeFile}`)}
-=  Signature:  ${chalk.bgBlue.white.bold(`./${sigFile}`)}
-=
-+==============================================================+
-
-Send files above to the counterparty. They can verify and accept the trade by:
-
-  ${chalk.bold(`xcat verify ${tradeFile} ${sigFile}`)} (optional)
-  ${chalk.bold(`xcat import ${tradeFile}`)}
-
-To check the status and wait for the counterparty to accept run:
-
-  ${chalk.bold(`xcat status ${trade.id}`)}
-
-If the counterparty does not accept, claim your refund after ${chalk.bgMagenta.white.bold(
-    secsToDateStr(trade.timelock)
-  )} by running:
-
-  ${chalk.bold(`xcat refund ${trade.id}`)}
-`)
+  printResult(trade, tradeFile, sigFile)
 })

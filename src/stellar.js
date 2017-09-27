@@ -10,6 +10,27 @@ const initServer = (sdk, network) => {
   return new sdk.Server(horizonUrl, {allowHttp: false})
 }
 
+const matchSigner = (signer, type, key, weight) =>
+  signer.type === type && signer.key === key && signer.weight === weight
+
+const matchOne = (array, matcherFn) => array.filter(matcherFn) === 1
+
+const validHoldingAccountSignerSetup = (
+  accAddress,
+  signers,
+  hashX,
+  withdrawer
+) =>
+  signers.length === 3 &&
+  matchOne(signers, s => matchSigner(s, 'sha256_hash', hashX, 1)) &&
+  matchOne(signers, s => matchSigner(s, 'ed25519_public_key', withdrawer, 1)) &&
+  matchOne(signers, s => matchSigner(s, 'ed25519_public_key', accAddress, 0))
+
+/**
+ * Interface to the Stellar network providing implementations of required xcat
+ * transactions as well as routines to check the state of the ledger.
+ */
+
 class Stellar {
   constructor(sdk, network) {
     this.sdk = sdk
@@ -76,6 +97,41 @@ class Stellar {
     )
 
     return tb.build()
+  }
+
+  /**
+   * Validates a given holding account exists and is setup correctly.
+   *
+   * @param holdingAccountAddress Holding account public key
+   * @param depositorAddress Address of the depositing account
+   * @param withdrawerAddress Address of the withdrawer
+   * @param hashX Hash(x) signer hash
+   */
+  async isValidHoldingAccount(
+    holdingAccountAddress,
+    depositorAddress,
+    withdrawerAddress,
+    hashX
+  ) {
+    const acc = await this.server
+      .loadAccount(holdingAccountAddress)
+      .catch(this.sdk.NotFoundError, () => undefined)
+      .catch(e => {
+        console.error(
+          `unknown error fetching account ${holdingAccountAddress}`,
+          e
+        )
+        throw e
+      })
+
+    if (!acc) return false
+
+    return validHoldingAccountSignerSetup(
+      holdingAccountAddress,
+      acc.signers,
+      hashX,
+      withdrawerAddress
+    )
   }
 
   /**

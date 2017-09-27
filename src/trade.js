@@ -2,6 +2,7 @@ import Ajv from 'ajv'
 import {
   clone,
   isEthereumPublicAddress,
+  isSha256Hash,
   isStellarFederatedAddress,
   isStellarPublicAddress,
   objToStr,
@@ -13,6 +14,7 @@ const {validator, ajv} = (() => {
   ajv.addFormat('stellarPublicAddress', isStellarPublicAddress)
   ajv.addFormat('stellarFederatedAddress', isStellarFederatedAddress)
   ajv.addFormat('ethereumPublicAddress', isEthereumPublicAddress)
+  ajv.addFormat('sha256Hash', isSha256Hash)
   ajv.addSchema(TradeSchema, 'Trade')
   return {validator: ajv.compile(TradeSchema), ajv: ajv}
 })()

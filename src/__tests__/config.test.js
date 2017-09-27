@@ -35,4 +35,12 @@ describe('config', () => {
     configBad.ethereumRPC = '//notaurl'
     expect(() => new Config(configBad)).toThrowErrorMatchingSnapshot()
   })
+
+  it('provides property reference to derived stellar public key', () => {
+    const configJSON = clone(config1)
+    const config = new Config(configJSON)
+    expect(config.stellarPublicAddress).toEqual(
+      'GCOCD2SVBEOB4PWMS7FEOFM27TPSZBO5LFR24NBMT6Q73OIUKBKDKFBS'
+    )
+  })
 })

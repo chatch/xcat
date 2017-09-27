@@ -37,6 +37,8 @@ const isStellarFederatedAddress = addr => /^[^*,]*\*[a-z0-9-.]*$/i.test(addr)
 
 const isEthereumPublicAddress = addr => Web3Utils.isAddress(addr)
 
+const isSha256Hash = hash => /^(0x)?[0-9a-f]{64}$/i.test(hash)
+
 const isUrl = url => {
   try {
     new URL(url)
@@ -87,6 +89,7 @@ export {
   clone,
   fileToObj,
   fileToStr,
+  isSha256Hash,
   isStellarPublicAddress,
   isStellarSecretSeed,
   isStellarFederatedAddress,

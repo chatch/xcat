@@ -32,8 +32,8 @@
         "withdrawer": {
           "format": "ethereumPublicAddress"
         },
-        "htlcContractAddr": {
-          "format": "ethereumPublicAddress"
+        "htlcContractId": {
+          "format": "sha256Hash"
         }
       },
       "required": ["token", "amount", "depositor", "withdrawer"]

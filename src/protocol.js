@@ -1,5 +1,6 @@
 import sdk from 'stellar-sdk'
 import Promise from 'bluebird'
+import has from 'lodash/has'
 
 import Stellar from './stellar'
 import Ethereum from './ethereum'
@@ -14,6 +15,7 @@ const Status = Object.freeze({
   STELLAR_FULFILL: 3,
   ETHEREUM_FULFILL: 4,
   FINALISED: 5,
+  ERROR: 99,
 })
 
 class Protocol {
@@ -31,11 +33,16 @@ class Protocol {
       throw new Error('instance of Config required')
     if (!isClassWithName(trade, 'Trade'))
       throw new Error('instance of Trade required')
+
     this.config = config
     this.trade = trade
     this.tradeDB = new TradeDB()
     this.stellar = new Stellar(sdk, config.stellarNetwork)
     this.eth = new Ethereum(config.ethereumRPC, config.ethereumNetwork, HTLC)
+
+    // trade has an id but it's not in the database (most likely from an import)
+    if (has(trade, 'id') && this.tradeDB.get(trade.id) === undefined)
+      this.tradeDB.save(trade)
   }
 
   /**
@@ -100,24 +107,79 @@ class Protocol {
    * Subscribe to counterparty events. Required when this local party is waiting
    * for the next step to be completed by the counterparty.
    */
-  subscribe() {}
+  subscribe() {
+    // // get all events
+    // const getPastEvents = Promise.promisify(this.eth.htlc.getPastEvents)
+    // this.htlcEvents = await getPastEvents('allEvents')
+    // this.eth.htlc.events.allEvents(this.ethereumEventHandlerHTLC)
+    // // subscribe to events
+    //
+    // this.localParty = 'stellar'
+    // this.status = Status.ETHEREUM_PREPARE
+  }
 
   /**
    * Determine the Status of the trade by querying the chains.
+   *
+   * This functions as a verify up to the point of the returned status.
+   *
    * @return Status reflecting the current state
    */
   async status() {
-    // determine and update the status
-    this.status()
+    let stellarPrepared = false
+    let ethereumPrepared = false
 
-    // get all events
-    const getPastEvents = Promise.promisify(this.eth.htlc.getPastEvents)
-    this.htlcEvents = await getPastEvents('allEvents')
-    this.eth.htlc.events.allEvents(this.ethereumEventHandlerHTLC)
-    // subscribe to events
+    // Has Stellar side been prepared?
+    const holdAcc = this.trade.stellar.holdingAccount
+    if (holdAcc) {
+      if (await this.stellar.isValidHoldingAccount(holdAcc)) {
+        stellarPrepared = true
+      } else {
+        console.error(`Have holdingAccount ${holdAcc} but it is NOT valid.`)
+        return Status.ERROR
+      }
+    }
 
-    this.localParty = 'stellar'
-    this.status = Status.ETHEREUM_PREPARE
+    // Has Ethereum side been prepared?
+    let contract
+    const contractId = this.trade.ethereum.htlcContractId
+    if (contractId) {
+      contract = await this.ethereum.getContract(contractId)
+      if (contract) {
+        ethereumPrepared = true
+      } else {
+        console.error(
+          `Have htlcContractId ${contractId} but it does NOT exist in ` +
+            `the HTLC smart contract ${this.ethereum.htlc}.`
+        )
+        return Status.ERROR
+      }
+    }
+
+    if (!stellarPrepared && !ethereumPrepared) return Status.INIT
+    if (stellarPrepared && !ethereumPrepared) return Status.ETHEREUM_PREPARE
+    if (!stellarPrepared && ethereumPrepared) return Status.STELLAR_PREPARE
+
+    // Both sides prepared so now check for fulfillments
+    let stellarFulfilled = false
+    let ethereumFulfilled = false
+
+    if (contract.withdrawn) ethereumFulfilled = true
+
+    const xlmBalance = Number(
+      holdAcc.balances.filter(b => (b.asset_type = 'native'))[0].balance
+    )
+    if (xlmBalance === 0) {
+      stellarFulfilled = true
+
+      // TODO: further checks: look for the operation that moved the funds
+      // to the receiver and check the exact amount was transferred
+    }
+
+    if (!stellarFulfilled && ethereumFulfilled) return Status.STELLAR_FULFILL
+    if (stellarFulfilled && !ethereumFulfilled) return Status.ETHEREUM_FULFILL
+
+    return Status.FINALISED
   }
 }
 Protocol.Status = Status

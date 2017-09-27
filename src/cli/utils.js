@@ -1,3 +1,4 @@
+import {Command} from 'commander'
 import chalk from 'chalk'
 import {existsSync} from 'fs'
 
@@ -9,33 +10,16 @@ const MIN_TIMELOCK_EXPIRY = 3600 // 1 hour
 
 const logError = msg => console.error(chalk.red(`\nERROR: ${msg}`))
 
-const verifyArgTradeFile = filename => {
-  if (!filename || (typeof filename === 'string' && filename.trim() === '')) {
-    logError(`No file provided. Pass the name of a trade.json file.`)
-    return false
-  }
+// given filename arg, use it if non blank, else use defaultFile
+const fileArgOrDefault = (filename, defaultFile) =>
+  !filename || typeof filename !== 'string' || filename.trim() === ''
+    ? defaultFile
+    : filename
 
-  if (!existsSync(filename)) {
-    logError(`Trade file [${filename}] does not exist.`)
-    return false
-  }
-
-  try {
-    new Trade(fileToObj(filename))
-  } catch (err) {
-    logError(`Failed to parse [${filename}]:`)
-    console.error(`\n\n${err}`)
-    return false
-  }
-
-  return true
-}
+const configFileArgOrDefault = filename =>
+  fileArgOrDefault(filename, './config.json')
 
 const verifyConfigFile = filename => {
-  // look for config.json in local directory if not provided
-  if (!filename || typeof filename !== 'string' || filename.trim() === '')
-    filename = './config.json'
-
   if (!existsSync(filename)) {
     logError(
       `Config file [${filename}] does not exist. Put a config.json in the ` +
@@ -46,6 +30,23 @@ const verifyConfigFile = filename => {
 
   try {
     new Config(fileToObj(filename))
+  } catch (err) {
+    logError(`Failed to parse [${filename}]:`)
+    console.error(`\n\n${err}`)
+    return false
+  }
+
+  return true
+}
+
+const verifyArgTradeFile = filename => {
+  if (!existsSync(filename)) {
+    logError(`Trade file [${filename}] does not exist.`)
+    return false
+  }
+
+  try {
+    new Trade(fileToObj(filename))
   } catch (err) {
     logError(`Failed to parse [${filename}]:`)
     console.error(`\n\n${err}`)
@@ -72,7 +73,18 @@ const verifyNewTradeTimelock = timelock => {
   return true
 }
 
+Command.prototype.optionConfig = function() {
+  return this.option(
+    '-c, --config <path>',
+    'Config file (see config.json.template). Defaults to ./config.json.'
+  )
+}
+const commander = new Command()
+
 export {
+  commander,
+  configFileArgOrDefault,
+  fileArgOrDefault,
   fileToObj,
   logError,
   verifyArgTradeFile,
