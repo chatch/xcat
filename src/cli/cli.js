@@ -7,10 +7,10 @@ program
   .alias('n')
   .command('import <trade.json>', 'Import a trade from a trade.json file')
   .alias('i')
-  .command('status <tradeId>', 'Import a trade from a trade.json file')
+  .command('status <tradeId>', 'Check status of a trade')
   .alias('s')
   .command(
-    'verify <trade.json> <trade.json.sig>',
+    'verifysig <trade.json> <trade.json.sig>',
     'Verify signature for a trade.json'
   )
   .alias('v')

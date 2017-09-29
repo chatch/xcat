@@ -1,7 +1,8 @@
 {
   "deployed": {
     "ropsten": "0x661335475ca4697da9e8827cbb859834911a040b",
-    "rinkeby": "0x94ac65c50b4b0618bc0ca7d374382f6c9e14d20f"
+    "rinkeby": "0x94ac65c50b4b0618bc0ca7d374382f6c9e14d20f",
+    "testrpc": "0x25e192ea32295d98194a32f7194e6e0eb7fe60b9"
   },
   "abi": [
     {

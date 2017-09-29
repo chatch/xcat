@@ -2,8 +2,8 @@ import chalk from 'chalk'
 import {existsSync} from 'fs'
 
 import Trade from '../trade'
-import {verifyArgTradeFile} from './utils'
-import {commander as program, fileToObj, fileToStr, verify} from '../utils'
+import {commander as program, verifyArgTradeFile} from './utils'
+import {fileToObj, fileToStr, verify} from '../utils'
 
 let signatureFile, tradeJSON
 program
@@ -11,7 +11,7 @@ program
     'Verify a signature for the trade file was produced by the stellar depositor.\n'
   )
   .arguments('<trade.json> <trade.json.sig>')
-  .action(function(jsonFile, sigFile) {
+  .action((jsonFile, sigFile) => {
     tradeJSON = jsonFile
     signatureFile = sigFile
   })
@@ -20,7 +20,7 @@ program
 if (!verifyArgTradeFile(tradeJSON)) program.help()
 if (!existsSync(signatureFile)) program.help()
 
-console.log(`Verifying signature ...`)
+console.log(`Verifying signature ...\n`)
 const trade = new Trade(fileToObj(tradeJSON))
 const signer = trade.stellar.depositor
 const signature = fileToStr(signatureFile)

@@ -2,7 +2,7 @@ import expect from 'expect'
 import {clone} from '../utils'
 import Config from '../config'
 
-const config1 = require('./data/config1.json')
+const config1 = require('./__data__/config1.json')
 
 describe('config', () => {
   it('creates new Config that has all properties of the given config object', () => {

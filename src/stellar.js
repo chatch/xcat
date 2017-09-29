@@ -1,30 +1,26 @@
+import {stellarEncodeHash} from './utils'
+
 const initServer = (sdk, network) => {
+  let allowHttp = false
   let horizonUrl
   if (network === 'public') {
-    sdk.Network.usePublicNetwork()
     horizonUrl = 'https://horizon.stellar.org'
-  } else {
-    sdk.Network.useTestNetwork()
+  } else if (network === 'testnet') {
     horizonUrl = 'https://horizon-testnet.stellar.org'
+  } else {
+    horizonUrl = 'http://localhost:8000'
+    allowHttp = true
   }
-  return new sdk.Server(horizonUrl, {allowHttp: false})
+  network === 'public'
+    ? sdk.Network.usePublicNetwork()
+    : sdk.Network.useTestNetwork()
+  return new sdk.Server(horizonUrl, {allowHttp: allowHttp})
 }
+
+const matchOne = (array, matcherFn) => array.filter(matcherFn).length === 1
 
 const matchSigner = (signer, type, key, weight) =>
   signer.type === type && signer.key === key && signer.weight === weight
-
-const matchOne = (array, matcherFn) => array.filter(matcherFn) === 1
-
-const validHoldingAccountSignerSetup = (
-  accAddress,
-  signers,
-  hashX,
-  withdrawer
-) =>
-  signers.length === 3 &&
-  matchOne(signers, s => matchSigner(s, 'sha256_hash', hashX, 1)) &&
-  matchOne(signers, s => matchSigner(s, 'ed25519_public_key', withdrawer, 1)) &&
-  matchOne(signers, s => matchSigner(s, 'ed25519_public_key', accAddress, 0))
 
 /**
  * Interface to the Stellar network providing implementations of required xcat
@@ -32,6 +28,34 @@ const validHoldingAccountSignerSetup = (
  */
 
 class Stellar {
+  static validHoldingAccountSignerSetup(
+    signers,
+    accAddress,
+    withdrawer,
+    hashX
+  ) {
+    return (
+      signers.length === 3 &&
+      matchOne(signers, s =>
+        matchSigner(s, 'ed25519_public_key', withdrawer, 1)
+      ) &&
+      matchOne(signers, s =>
+        matchSigner(s, 'ed25519_public_key', accAddress, 0)
+      ) &&
+      matchOne(signers, s =>
+        matchSigner(s, 'sha256_hash', stellarEncodeHash(hashX), 1)
+      )
+    )
+  }
+
+  static validHoldingAccountThresholds(thresholds) {
+    return (
+      thresholds.low_threshold === 2 &&
+      thresholds.med_threshold === 2 &&
+      thresholds.high_threshold === 2
+    )
+  }
+
   constructor(sdk, network) {
     this.sdk = sdk
     this.server = initServer(sdk, network)
@@ -90,9 +114,9 @@ class Stellar {
           weight: 1,
         },
         masterWeight: 0,
-        lowThreshhold: 2,
-        medThreshhold: 2,
-        highThreshhold: 2,
+        lowThreshold: 2,
+        medThreshold: 2,
+        highThreshold: 2,
       })
     )
 
@@ -103,16 +127,10 @@ class Stellar {
    * Validates a given holding account exists and is setup correctly.
    *
    * @param holdingAccountAddress Holding account public key
-   * @param depositorAddress Address of the depositing account
    * @param withdrawerAddress Address of the withdrawer
    * @param hashX Hash(x) signer hash
    */
-  async isValidHoldingAccount(
-    holdingAccountAddress,
-    depositorAddress,
-    withdrawerAddress,
-    hashX
-  ) {
+  async isValidHoldingAccount(holdingAccountAddress, withdrawerAddress, hashX) {
     const acc = await this.server
       .loadAccount(holdingAccountAddress)
       .catch(this.sdk.NotFoundError, () => undefined)
@@ -126,11 +144,13 @@ class Stellar {
 
     if (!acc) return false
 
-    return validHoldingAccountSignerSetup(
-      holdingAccountAddress,
-      acc.signers,
-      hashX,
-      withdrawerAddress
+    return (
+      Stellar.validHoldingAccountSignerSetup(
+        acc.signers,
+        holdingAccountAddress,
+        withdrawerAddress,
+        hashX
+      ) && Stellar.validHoldingAccountThresholds(acc.thresholds)
     )
   }
 

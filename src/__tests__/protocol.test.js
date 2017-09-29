@@ -4,8 +4,8 @@ import Trade from '../trade'
 import Config from '../config'
 import Protocol from '../protocol'
 
-import config1 from './data/config1'
-import trade1 from './data/trade1'
+import config1 from './__data__/config1'
+import trade1 from './__data__/trade1'
 
 describe('protocol', () => {
   const config = new Config(config1)

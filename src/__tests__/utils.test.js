@@ -1,5 +1,5 @@
 import expect from 'expect'
-import {isSha256Hash, sign, verify} from '../utils'
+import {isSha256Hash, sign, stellarEncodeHash, verify} from '../utils'
 import stellarSdk from 'stellar-sdk'
 
 // https://stackoverflow.com/a/8571649
@@ -34,6 +34,16 @@ describe('utils', () => {
           '0x60275d4c13b532f44d708de3ed59b80a04785fd68e50a1c8462c83632675b038'
         )
       ).toEqual(true)
+    })
+  })
+
+  describe('stellarEncodeHash', () => {
+    it('encodes sha256 hash to Stellars internal hashx signer form', () => {
+      expect(
+        stellarEncodeHash(
+          '22bf0b3d38d2bec7226eeafd6571cdd452d34a79fb4e72f98e246d372c6a9855'
+        )
+      ).toEqual('XARL6CZ5HDJL5RZCN3VP2ZLRZXKFFU2KPH5U44XZRYSG2NZMNKMFKVAT')
     })
   })
 })

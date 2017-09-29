@@ -41,8 +41,9 @@ class Protocol {
     this.eth = new Ethereum(config.ethereumRPC, config.ethereumNetwork, HTLC)
 
     // trade has an id but it's not in the database (most likely from an import)
-    if (has(trade, 'id') && this.tradeDB.get(trade.id) === undefined)
+    if (has(trade, 'id') && this.tradeDB.get(trade.id) === undefined) {
       this.tradeDB.save(trade)
+    }
   }
 
   /**
@@ -67,6 +68,25 @@ class Protocol {
         this.trade = this.tradeDB.save(this.trade)
         return this.trade
       })
+  }
+
+  /**
+   * Prepare the ethereum side of the trade by creating the hashed timelock
+   *  contract.
+   * @param onSuccess Callback called once the transaction has been mined (only 1 confirmation)
+   * @param onError Callback called if there was a problem
+   */
+  async ethereumPrepare(onSuccess, onError) {
+    const t = this.trade
+    return this.eth.createHashedTimelockContract(
+      t.commitment,
+      t.ethereum.depositor,
+      t.ethereum.withdrawer,
+      t.ethereum.amount,
+      t.timelock,
+      onSuccess,
+      onError
+    )
   }
 
   /**
@@ -129,14 +149,23 @@ class Protocol {
     let stellarPrepared = false
     let ethereumPrepared = false
 
+    const ret = status => Promise.resolve(status)
+    const retErr = () => Promise.reject(Status.ERROR)
+
     // Has Stellar side been prepared?
     const holdAcc = this.trade.stellar.holdingAccount
     if (holdAcc) {
-      if (await this.stellar.isValidHoldingAccount(holdAcc)) {
+      if (
+        await this.stellar.isValidHoldingAccount(
+          holdAcc,
+          this.trade.stellar.withdrawer,
+          this.trade.commitment
+        )
+      ) {
         stellarPrepared = true
       } else {
         console.error(`Have holdingAccount ${holdAcc} but it is NOT valid.`)
-        return Status.ERROR
+        return retErr()
       }
     }
 
@@ -152,13 +181,14 @@ class Protocol {
           `Have htlcContractId ${contractId} but it does NOT exist in ` +
             `the HTLC smart contract ${this.ethereum.htlc}.`
         )
-        return Status.ERROR
+        return retErr()
       }
     }
 
-    if (!stellarPrepared && !ethereumPrepared) return Status.INIT
-    if (stellarPrepared && !ethereumPrepared) return Status.ETHEREUM_PREPARE
-    if (!stellarPrepared && ethereumPrepared) return Status.STELLAR_PREPARE
+    if (!stellarPrepared && !ethereumPrepared) return ret(Status.INIT)
+    if (stellarPrepared && !ethereumPrepared)
+      return ret(Status.ETHEREUM_PREPARE)
+    if (!stellarPrepared && ethereumPrepared) return ret(Status.STELLAR_PREPARE)
 
     // Both sides prepared so now check for fulfillments
     let stellarFulfilled = false
@@ -176,10 +206,12 @@ class Protocol {
       // to the receiver and check the exact amount was transferred
     }
 
-    if (!stellarFulfilled && ethereumFulfilled) return Status.STELLAR_FULFILL
-    if (stellarFulfilled && !ethereumFulfilled) return Status.ETHEREUM_FULFILL
+    if (!stellarFulfilled && ethereumFulfilled)
+      return ret(Status.STELLAR_FULFILL)
+    if (stellarFulfilled && !ethereumFulfilled)
+      return ret(Status.ETHEREUM_FULFILL)
 
-    return Status.FINALISED
+    return ret(Status.FINALISED)
   }
 }
 Protocol.Status = Status

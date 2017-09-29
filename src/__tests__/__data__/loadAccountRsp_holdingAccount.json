@@ -1,0 +1,42 @@
+{
+  "id": "GCVG6GGMTEOERQ2QRALNLITHULKRHPUJE6RON7B2H5PEGLTODFD6DTLD",
+  "account_id": "GCVG6GGMTEOERQ2QRALNLITHULKRHPUJE6RON7B2H5PEGLTODFD6DTLD",
+  "sequence": "18060990314708992",
+  "subentry_count": 2,
+  "thresholds": {
+    "low_threshold": 2,
+    "med_threshold": 2,
+    "high_threshold": 2
+  },
+  "flags": {
+    "auth_required": false,
+    "auth_revocable": false
+  },
+  "balances": [
+    {
+      "balance": "40.0000000",
+      "asset_type": "native"
+    }
+  ],
+  "signers": [
+    {
+      "public_key": "XARL6CZ5HDJL5RZCN3VP2ZLRZXKFFU2KPH5U44XZRYSG2NZMNKMFKVAT",
+      "weight": 1,
+      "key": "XARL6CZ5HDJL5RZCN3VP2ZLRZXKFFU2KPH5U44XZRYSG2NZMNKMFKVAT",
+      "type": "sha256_hash"
+    },
+    {
+      "public_key": "GCG52B2LBYVTPUCIQFDB7VBXARK4OUV5NSEQ5R6T343FW7GR4MBUM3V6",
+      "weight": 1,
+      "key": "GCG52B2LBYVTPUCIQFDB7VBXARK4OUV5NSEQ5R6T343FW7GR4MBUM3V6",
+      "type": "ed25519_public_key"
+    },
+    {
+      "public_key": "GCVG6GGMTEOERQ2QRALNLITHULKRHPUJE6RON7B2H5PEGLTODFD6DTLD",
+      "weight": 0,
+      "key": "GCVG6GGMTEOERQ2QRALNLITHULKRHPUJE6RON7B2H5PEGLTODFD6DTLD",
+      "type": "ed25519_public_key"
+    }
+  ],
+  "data": {}
+}

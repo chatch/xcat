@@ -2,7 +2,7 @@
   "id": "/Config",
   "type": "object",
   "properties": {
-    "stellarNetwork": {"enum": ["testnet", "public"]},
+    "stellarNetwork": {"enum": ["public", "testnet", "localnet"]},
     "stellarAccountSecret": {"format": "stellarSecretSeed"},
     "ethereumNetwork": {"type": "string"},
     "ethereumRPC": {"format": "URL"},

@@ -50,14 +50,13 @@
     "jest-cli": "^21.0.0",
     "nsp": "^2.6.3"
   },
-  "files": [
-    "lib"
-  ],
+  "files": ["lib"],
   "jest": {
+    "roots": ["src/"],
+    "testEnvironment": "node",
     "transform": {
       "^.+\\.jsx?$": "babel-jest"
-    },
-    "testEnvironment": "node"
+    }
   },
   "eslintConfig": {
     "extends": "xo-space",

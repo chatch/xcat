@@ -1,9 +1,9 @@
 import expect from 'expect'
-import {existsSync, unlinkSync} from 'fs'
+import {existsSync, renameSync, unlinkSync} from 'fs'
 
 import {clone} from '../utils'
 import TradeDB from '../trade-db'
-import testTrade from './data/trade1.json'
+import testTrade from './__data__/trade1.json'
 
 const DEFAULT_DB_PATH = './tradedb.json'
 const TRADE_ID_REGEX = /^[^-]*-[^-]*-[^-]*$/
@@ -13,6 +13,16 @@ const deleteIfExists = filename => {
 }
 
 describe('trade-db', () => {
+  const BACKUP_DB_PATH = './tradedb.json.backup'
+
+  beforeAll(() => {
+    if (existsSync(DEFAULT_DB_PATH)) renameSync(DEFAULT_DB_PATH, BACKUP_DB_PATH)
+  })
+
+  afterAll(() => {
+    if (existsSync(BACKUP_DB_PATH)) renameSync(BACKUP_DB_PATH, DEFAULT_DB_PATH)
+  })
+
   afterEach(() => {
     deleteIfExists(DEFAULT_DB_PATH)
   })

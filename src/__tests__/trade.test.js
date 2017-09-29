@@ -2,7 +2,7 @@ import expect from 'expect'
 import {clone} from '../utils'
 import Trade from '../trade'
 
-const trade1 = require('./data/trade1.json')
+const trade1 = require('./__data__/trade1.json')
 
 describe('trade', () => {
   it('creates new Trade that has all properties of the given trade object', () => {

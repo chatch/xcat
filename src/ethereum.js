@@ -3,6 +3,7 @@ import Web3Utils from 'web3-utils'
 import has from 'lodash/has'
 
 const txRetVal = txReceipt => txReceipt.receipt.logs[0].data
+const ethToWei = eth => Web3Utils.toWei(eth, 'ether')
 
 const contractArrToObj = c => {
   return {
@@ -47,26 +48,28 @@ class Ethereum {
   /**
    * Set up a new hashed timelock contract.
    */
-  createHashedTimelockContract(
-    hashX,
-    sellerAddr,
-    buyerAddr,
-    amount,
-    locktime,
-    onSuccessCallback,
-    onErrorCallback
-  ) {
-    this.htlc.methods
-      .newContract(buyerAddr, hashX, locktime)
+  createHashedTimelockContract(hashX, sellerAddr, buyerAddr, amount, locktime) {
+    const ethHashX = hashX.startsWith('0x') ? hashX : '0x' + hashX
+    // return this.htlc.methods
+    //   .newContract(buyerAddr, ethHashX, locktime)
+    //   .send({
+    //     from: sellerAddr,
+    //     value: ethToWei(amount),
+    //   })
+    //   .on('error', error => onErrorCallback(error))
+    //   .on('transactionHash', txHash =>
+    //     console.info(`tx hash[newContract]: ${txHash}`)
+    //   )
+    //   .on('receipt', receipt => onSuccessCallback(txRetVal(receipt)))
+    return this.htlc.methods
+      .newContract(buyerAddr, ethHashX, locktime)
       .send({
         from: sellerAddr,
-        value: amount,
+        value: ethToWei(amount),
       })
-      .on('error', error => onErrorCallback(error))
       .on('transactionHash', txHash =>
         console.info(`tx hash[newContract]: ${txHash}`)
       )
-      .on('receipt', receipt => onSuccessCallback(txRetVal(receipt)))
   }
 
   /**

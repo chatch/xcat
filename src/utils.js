@@ -18,6 +18,10 @@ const sha256 = x =>
     .update(x)
     .digest()
 
+// encode to Stellar internal format for hashX hashes
+const stellarEncodeHash = hash =>
+  stellarSdk.StrKey.encodeSha256Hash(Buffer.from(hash, 'hex'))
+
 const random32 = () => crypto.randomBytes(32)
 
 const newSecretHashPair = () => {
@@ -102,6 +106,7 @@ export {
   random32,
   sha256,
   sign,
+  stellarEncodeHash,
   strToFile,
   verify,
 }

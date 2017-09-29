@@ -37,7 +37,7 @@ class TradeDB {
       throw new Error(`trade does not conform to schema. see schema/trade.json`)
 
     // generate an id for new trades
-    if (!has(trade, 'tradeId')) trade.id = hri.random()
+    if (!has(trade, 'id')) trade.id = hri.random()
 
     this.db[trade.id] = trade
     this._flush()

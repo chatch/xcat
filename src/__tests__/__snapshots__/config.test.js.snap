@@ -58,8 +58,9 @@ exports[`config throws if unknown stellarNetwork 1`] = `
     \\"schemaPath\\": \\"#/properties/stellarNetwork/enum\\",
     \\"params\\": {
       \\"allowedValues\\": [
+        \\"public\\",
         \\"testnet\\",
-        \\"public\\"
+        \\"localnet\\"
       ]
     },
     \\"message\\": \\"should be equal to one of the allowed values\\"
