@@ -14,6 +14,4 @@ program
     'Verify signature for a trade.json'
   )
   .alias('v')
-  .command('refund <tradeId>', 'Claim a refund if timelock has expired')
-  .alias('r')
   .parse(process.argv)

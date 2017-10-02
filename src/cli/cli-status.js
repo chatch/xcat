@@ -36,8 +36,11 @@ const trade = new Trade(tradeObj)
 const protocol = new Protocol(config, trade)
 
 console.log(`Check status running ...`)
-protocol.status().then(status => {
-  console.log(`status: ${status}`)
-
-  // prompt for next action or show waiting for counterparty action
-})
+protocol
+  .status()
+  .then(status => {
+    console.log(`status: ${Protocol.Status.key(status)}`)
+  })
+  .catch(err => {
+    console.error(`Failed to determine status: [${err}]`)
+  })

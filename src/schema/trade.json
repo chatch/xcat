@@ -2,15 +2,8 @@
   "id": "/Trade",
   "type": "object",
   "properties": {
-    "status": {
-      "enum": [
-        "init",
-        "stellar_prepare",
-        "ethereum_prepare",
-        "stellar_withdraw",
-        "ethereum_withdraw",
-        "finalised"
-      ]
+    "initialSide": {
+      "enum": ["stellar", "ethereum"]
     },
     "timelock": {"type": "number"},
     "commitment": {

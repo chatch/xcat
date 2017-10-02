@@ -1,5 +1,11 @@
 import expect from 'expect'
-import {isSha256Hash, sign, stellarEncodeHash, verify} from '../utils'
+import {
+  isEthereumPublicAddress,
+  isSha256Hash,
+  sign,
+  stellarEncodeHash,
+  verify,
+} from '../utils'
 import stellarSdk from 'stellar-sdk'
 
 // https://stackoverflow.com/a/8571649
@@ -44,6 +50,18 @@ describe('utils', () => {
           '22bf0b3d38d2bec7226eeafd6571cdd452d34a79fb4e72f98e246d372c6a9855'
         )
       ).toEqual('XARL6CZ5HDJL5RZCN3VP2ZLRZXKFFU2KPH5U44XZRYSG2NZMNKMFKVAT')
+    })
+  })
+
+  describe('isEthereumPublicAddress', () => {
+    it('identifies an ethereum address', () => {
+      expect(
+        isEthereumPublicAddress('0xe8a944a09629cffb09f8696acb39b256b5c125db')
+      ).toEqual(true)
+      expect(isEthereumPublicAddress()).toEqual(false)
+      expect(isEthereumPublicAddress(null)).toEqual(false)
+      expect(isEthereumPublicAddress('')).toEqual(false)
+      expect(isEthereumPublicAddress('0x0')).toEqual(false)
     })
   })
 })

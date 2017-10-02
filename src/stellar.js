@@ -222,6 +222,10 @@ class Stellar {
     tx.sign(buyerKeypair, preimage)
     return tx
   }
+
+  loadAccount(publicKey) {
+    return this.server.loadAccount(publicKey)
+  }
 }
 
 export default Stellar

@@ -1,4 +1,5 @@
 import Ajv from 'ajv'
+import chalk from 'chalk'
 import {
   clone,
   isEthereumPublicAddress,
@@ -6,6 +7,7 @@ import {
   isStellarFederatedAddress,
   isStellarPublicAddress,
   objToStr,
+  secsToDateStr,
 } from './utils'
 const TradeSchema = require('./schema/trade.json')
 
@@ -68,13 +70,28 @@ class Trade {
   }
 
   toStringPretty() {
-    const t = this.trade
-    return `Trade:
-    Stellar
-    -------
-    Amount: ${t.stellar.amount}
-    Holding Account: ${t.stellar.holdingAccount}
-    `
+    const s = this.stellar
+    const e = this.ethereum
+    return chalk.cyan(`
+Trade Summary
+=============
+${s.amount} XLM for ${e.amount} ETH
+
+Stellar
+-------
+From:    ${s.depositor}
+To:      ${s.withdrawer}
+Escrow:  ${s.holdingAccount ? s.holdingAccount : '<none yet>'}
+
+Ethereum
+--------
+From:    ${e.depositor}
+To:      ${e.withdrawer}
+Escrow:  ${e.htlcContractId ? e.htlcContractId : '<none yet>'}
+
+Commitment:  ${this.commitment}
+Expires:     ${secsToDateStr(this.timelock)}
+`)
   }
 }
 

@@ -1,9 +1,11 @@
-import Web3Eth from 'web3-eth'
-import Web3Utils from 'web3-utils'
-import has from 'lodash/has'
+import Promise from 'bluebird'
+import Web3 from 'web3'
+import Web3Utils from 'web3/lib/utils/utils'
 import truffleContract from 'truffle-contract'
+import has from 'lodash/has'
 
-const txRetVal = txReceipt => txReceipt.receipt.logs[0].data
+const txContractId = txReceipt => txReceipt.logs[0].args.contractId
+
 const ethToWei = eth => Web3Utils.toWei(eth, 'ether')
 
 const contractArrToObj = c => {
@@ -29,25 +31,23 @@ class Ethereum {
    *          contain deployed addresses for each 'network' as:
    *            deployed: { ropsten: '0xabc...', 'mainnet: 0x123...', etc.
    */
-  constructor(rpcAddr, network, htlcContractObj) {
-    if (!has(htlcContractObj.deployed, network))
+  constructor(rpcAddr, htlcContractObj, htlcContractAddr) {
+    if (!Web3Utils.isAddress(htlcContractAddr))
       throw new Error(
-        `No contract deployment address found for HashedTimelock on ` +
-          `network [${network}].`
-      )
-
-    const htlcAddr = htlcContractObj.deployed[network]
-    if (!Web3Utils.isAddress(htlcAddr))
-      throw new Error(
-        `HashedTimelock deployment address [${htlcAddr}] ` +
+        `HashedTimelock deployment address [${htlcContractAddr}] ` +
           `is not a valid contract address`
       )
 
-    this.web3Eth = new Web3Eth(rpcAddr)
+    this.web3 = new Web3(new Web3.providers.HttpProvider(rpcAddr))
 
+    // htlc contract handle (truffle-contract)
     const HTLC = truffleContract(htlcContractObj)
-    HTLC.setProvider(this.web3Eth.currentProvider)
-    this.htlc = HTLC.at(htlcAddr)
+    HTLC.setProvider(this.web3.currentProvider)
+    this.htlc = HTLC.at(htlcContractAddr)
+
+    // htlc contract handle (web3) - for events/logs only
+    const HTLCWeb3 = this.web3.eth.contract(htlcContractObj.abi)
+    this.htlcWeb3 = HTLCWeb3.at(htlcContractAddr)
   }
 
   /**
@@ -62,8 +62,9 @@ class Ethereum {
       .newContract(buyerAddr, ethHashX, locktime, {
         from: sellerAddr,
         value: amountWei,
+        gas: 200000,
       })
-      .then(txReceipt => txRetVal(txReceipt)) // contractId)
+      .then(txContractId)
   }
 
   /**
@@ -92,6 +93,32 @@ class Ethereum {
    */
   getContract(contractId) {
     return this.htlc.getContract.call(contractId).then(c => contractArrToObj(c))
+  }
+
+  /**
+   * Try find a trade contract given contrace details. Looks up LogNewContract
+   * events to discover a matching contract.
+   *
+   * @return Promise with contractId of matching contract
+   */
+  findContract(depositor, withdrawer, amount, hashlock, timelock) {
+    const filter = {
+      receiver: withdrawer,
+      sender: depositor,
+      amount: amount,
+      hashlock: hashlock,
+      timelock: timelock,
+    }
+    const event = this.htlcWeb3.LogNewContract(filter)
+    event.get = Promise.promisify(event.get)
+    return event
+      .get()
+      .then(
+        res =>
+          res.length > 0 && has(res[0], 'args')
+            ? res[0].args.contractId
+            : undefined
+      )
   }
 }
 

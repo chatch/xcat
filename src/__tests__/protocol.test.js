@@ -18,4 +18,12 @@ describe('protocol', () => {
     expect(protocol.eth).toBeDefined()
     expect(protocol.stellar).toBeDefined()
   })
+
+  describe('Status', () => {
+    it('gives key for matching value', () => {
+      expect(Protocol.Status.key(0)).toEqual('INIT')
+      expect(Protocol.Status.key(99)).toEqual('ERROR')
+      expect(Protocol.Status.key()).not.toBeDefined()
+    })
+  })
 })

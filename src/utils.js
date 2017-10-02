@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import {readFileSync, writeFileSync} from 'fs'
 import {URL} from 'url'
 import stellarSdk from 'stellar-sdk'
-import Web3Utils from 'web3-utils'
+import Web3Utils from 'web3/lib/utils/utils'
 import hasIn from 'lodash/hasIn'
 
 // Format required for sending bytes through an eth js client:
@@ -55,6 +55,9 @@ const isUrl = url => {
 const isClassWithName = (cls, name) =>
   hasIn(cls, 'constructor.name') && cls.constructor.name === name
 
+// UTC seconds to localised date string
+const secsToDateStr = secs => new Date(secs * 1000).toString()
+
 const fileToStr = filename => readFileSync(filename).toString()
 const fileToObj = filename => JSON.parse(fileToStr(filename))
 const strToFile = (filename, str) => writeFileSync(filename, str)
@@ -104,6 +107,7 @@ export {
   objToFile,
   objToStr,
   random32,
+  secsToDateStr,
   sha256,
   sign,
   stellarEncodeHash,

@@ -10,10 +10,14 @@ import {
   verifyConfigFile,
   verifyNewTradeTimelock,
 } from './utils'
-import {fileToObj, objToFile, objToStr, sign, strToFile} from '../utils'
-
-// UTC seconds to localised date string
-const secsToDateStr = secs => new Date(secs * 1000).toString()
+import {
+  fileToObj,
+  objToFile,
+  objToStr,
+  secsToDateStr,
+  sign,
+  strToFile,
+} from '../utils'
 
 /**
  * Print new trade result details along with commands for continuing the trade.
@@ -36,7 +40,7 @@ Trade created:
 
 Send files above to the counterparty. They can verify and accept the trade by:
 
-${chalk.bold(`xcat verify ${tradeFile} ${sigFile}`)} (optional)
+${chalk.bold(`xcat verifysig ${tradeFile} ${sigFile}`)} (optional)
 ${chalk.bold(`xcat import ${tradeFile}`)}
 
 To check the status and wait for the counterparty to accept run:
@@ -45,9 +49,7 @@ ${chalk.bold(`xcat status ${trade.id}`)}
 
 If the counterparty does not accept, claim your refund after ${chalk.bgMagenta.white.bold(
     secsToDateStr(trade.timelock)
-  )} by running:
-
-${chalk.bold(`xcat refund ${trade.id}`)}
+  )} by running the status command above. It will prompt to do the refund.
 `)
 
 /**
