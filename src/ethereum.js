@@ -8,6 +8,20 @@ const txContractId = txReceipt => txReceipt.logs[0].args.contractId
 
 const ethToWei = eth => Web3Utils.toWei(eth, 'ether')
 
+// Cheating bytecode comparison that compares the last 3000 bytes of the tail.
+// If comparing all then the intialisation code embedded in one of the 2 strings
+// causes a difference. For now this is better then no comparison at all.
+//
+// TODO: compare the FULL code from the contract creation transaction
+//      see here: https://ethereum.stackexchange.com/a/221
+//      Probably best to have the htlc project export that bytecode with the
+//      HashedTimelock.json
+const equalByteCodeTails = (hexStr1, hexStr2) => {
+  const tailCmpLen = 3000
+  const tail = str => str.substring(str.length - tailCmpLen)
+  return tail(hexStr1) === tail(hexStr2)
+}
+
 const contractArrToObj = c => {
   return {
     sender: c[0],
@@ -17,7 +31,32 @@ const contractArrToObj = c => {
     timelock: c[4],
     withdrawn: c[5],
     refunded: c[6],
+    preimage: c[7],
   }
+}
+
+const validateSetup = (web3, htlcContractObj, htlcContractAddr) => {
+  if (!Web3Utils.isAddress(htlcContractAddr))
+    throw new Error(
+      `HashedTimelock deployment address [${htlcContractAddr}] ` +
+        `is not a valid contract address`
+    )
+
+  const htlcByteCode = web3.eth.getCode(htlcContractAddr)
+  if (htlcByteCode === '0x0')
+    throw new Error(
+      `No code deployed at HashedTimelock deployment address ` +
+        `[${htlcContractAddr}] `
+    )
+
+  if (
+    equalByteCodeTails(htlcByteCode, htlcContractObj.unlinked_binary) !== true
+  )
+    throw new Error(
+      `Wrong code deployed at HashedTimelock deployment address ` +
+        `[${htlcContractAddr}]\n\nExpected:[\n` +
+        `[${htlcContractObj.unlinked_binary}]\n\nGot:[\n${htlcByteCode}\n]\n`
+    )
 }
 
 class Ethereum {
@@ -25,20 +64,14 @@ class Ethereum {
    * Setup web3 and a handle to the HashedTimelock contract
    *
    * @param rpcAddr Address of Ethereum client RPC
-   * @param network Ethereum network to connect to (eg. 'ropsten', 'mainnet')
    * @param htlcContractObj Truffle contract generated object containing
-   *          details of the contract including the abi. Additionally it should
-   *          contain deployed addresses for each 'network' as:
-   *            deployed: { ropsten: '0xabc...', 'mainnet: 0x123...', etc.
+   *          details of the contract including the abi.
+   * @param htlcContractAddr Address of the deployed HTLC contract
    */
   constructor(rpcAddr, htlcContractObj, htlcContractAddr) {
-    if (!Web3Utils.isAddress(htlcContractAddr))
-      throw new Error(
-        `HashedTimelock deployment address [${htlcContractAddr}] ` +
-          `is not a valid contract address`
-      )
-
     this.web3 = new Web3(new Web3.providers.HttpProvider(rpcAddr))
+
+    validateSetup(this.web3, htlcContractObj, htlcContractAddr)
 
     // htlc contract handle (truffle-contract)
     const HTLC = truffleContract(htlcContractObj)

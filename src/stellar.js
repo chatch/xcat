@@ -206,21 +206,47 @@ class Stellar {
   /**
    * Buyer withdraws funds from the holding account tx revealing preimage (x)
    * by adding x as a signer.
-   */
-  buyerWithdrawTx(holdingAccount, buyerKeypair, preimage, amount) {
-    const tb = new this.sdk.TransactionBuilder(holdingAccount)
 
+   * @return Transaction hash on success; throws Error with transaction error details on failure
+   */
+  async buyerWithdraw(holdingAccountPublicKey, buyerKeypair, preimage, amount) {
+    const holdingAccount = await this.server.loadAccount(
+      holdingAccountPublicKey
+    )
+
+    const tx = this.buyerWithdrawTx(
+      holdingAccount,
+      buyerKeypair.publicKey(),
+      amount
+    )
+
+    if (preimage.startsWith('0x')) preimage = preimage.substring(2)
+
+    tx.sign(buyerKeypair)
+    tx.signHashX(preimage)
+
+    return this.server
+      .submitTransaction(tx)
+      .then(txRsp => txRsp.hash)
+      .catch(err => {
+        throw new Error(`Stellar tx error: ${JSON.stringify(err, null, 2)}`)
+      })
+  }
+
+  /**
+   * Create transaction for the buyer withdrawal: buyer withdraws funds from
+   *  the holding account tx revealing preimage (x) by adding x as a signer.
+   */
+  buyerWithdrawTx(holdingAccount, buyerPublicKey, amount) {
+    const tb = new this.sdk.TransactionBuilder(holdingAccount)
     tb.addOperation(
       this.sdk.Operation.payment({
-        destination: buyerKeypair.publicKey(),
+        destination: buyerPublicKey,
         amount: String(amount),
         asset: this.sdk.Asset.native(),
       })
     )
-
-    const tx = tb.build()
-    tx.sign(buyerKeypair, preimage)
-    return tx
+    return tb.build()
   }
 
   loadAccount(publicKey) {

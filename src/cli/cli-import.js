@@ -1,5 +1,4 @@
 import inquirer from 'inquirer'
-import Promise from 'bluebird'
 
 import Config from '../config'
 import Protocol from '../protocol'
@@ -24,7 +23,7 @@ const processArgs = () => {
     )
     .optionConfig()
     .arguments('<tradeJSON>')
-    .action(function(jsonFile, options) {
+    .action((jsonFile, options) => {
       tradeJSON = jsonFile
       configJSON = options.config
     })
@@ -46,25 +45,29 @@ const parseFiles = (configJSON, tradeJSON) => {
 }
 
 const promptAcceptTrade = () =>
-  inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'accept',
-      message: 'Would you like to accept this trade?',
-    },
-  ])
+  inquirer
+    .prompt([
+      {
+        type: 'confirm',
+        name: 'accept',
+        message: 'Would you like to accept this trade?',
+      },
+    ])
+    .then(r => r.accept)
 
 const promptPrepareEthereum = () =>
-  inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'accept',
-      message:
-        'The next step is to setup the Ethereum hashed timelock contract. Would you like to proceed?',
-    },
-  ])
+  inquirer
+    .prompt([
+      {
+        type: 'confirm',
+        name: 'accept',
+        message:
+          'The next step is to setup the Ethereum hashed timelock contract. Would you like to proceed?',
+      },
+    ])
+    .then(r => r.accept)
 
-async function main() {
+const main = async () => {
   const {configJSON, tradeJSON} = processArgs()
   const {config, trade} = parseFiles(configJSON, tradeJSON)
 
@@ -73,31 +76,36 @@ async function main() {
 
   // print trade details and ask for confirmation to proceed
   console.log(trade.toStringPretty())
-  let {accept} = await promptAcceptTrade()
-  if (!accept) return Promise.resolve()
+
+  const acceptTrade = await promptAcceptTrade()
+  if (!acceptTrade) return
 
   console.log(`Checking the status ...`)
   const status = await protocol.status()
-  console.log(`status: ${status}`)
+  console.log(`status: ${Protocol.Status.key(status)}`)
 
-  // next step is Ethereum prepare by this local user
+  // next step is Ethereum prepare
   if (status === Protocol.Status.ETHEREUM_PREPARE) {
+    // if for this local user
     if (
       protocol.trade.ethereum.depositor ===
       protocol.config.ethereumPublicAddress
     ) {
-      let {accept} = await promptPrepareEthereum()
-      if (!accept) return Promise.resolve()
+      const acceptPrepare = await promptPrepareEthereum()
+      if (!acceptPrepare) return
 
       console.log(`ethereumPrepare call`)
       protocol
         .ethereumPrepare()
-        .then(contractId => console.log(`HTLC contract id::` + contractId))
+        .then(contractId =>
+          console.log(`Ethereum side prepared (htlc address: ${contractId})`)
+        )
         .catch(err => console.error(`ethereumPrepare error: ${err}`))
     } else {
-      console.log(`not calling ethereumPrepare call`)
-      // subscribe and wait for counterparty to complete EthereumPrepare
+      console.log(`Wait for the counterparty to prepare the Ethereum side`)
     }
+  } else if (status === Protocol.Status.STELLAR_PREPARE) {
+    // TODO: handle this once initiating from the Ethereum side is done
   }
 }
 

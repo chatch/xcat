@@ -9,6 +9,7 @@ import hasIn from 'lodash/hasIn'
 //  - hex string representation
 //  - prefixed with 0x
 const bufToStr = b => '0x' + b.toString('hex')
+const strToBuf = s => Buffer.from(s.replace('0x', ''), 'hex')
 
 const clone = obj => JSON.parse(JSON.stringify(obj))
 
@@ -111,6 +112,7 @@ export {
   sha256,
   sign,
   stellarEncodeHash,
+  strToBuf,
   strToFile,
   verify,
 }

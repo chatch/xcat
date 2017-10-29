@@ -52,48 +52,64 @@ If the counterparty does not accept, claim your refund after ${chalk.bgMagenta.w
   )} by running the status command above. It will prompt to do the refund.
 `)
 
+const processArgs = () => {
+  let configJSON, tradeJSON
+
+  program
+    .description(
+      'Initiate a new trade with a given trade.json file.\n\n' +
+        '  The trade.json must conform to the schema in schema/trade.json.\n\n' +
+        "  NOTE: file needs to be hand crafted but we'll provide a builder soon."
+    )
+    .optionConfig()
+    .arguments('<trade.json>')
+    .action((jsonFile, options) => {
+      tradeJSON = jsonFile
+      configJSON = options.config
+    })
+    .parse(process.argv)
+
+  return {configJSON, tradeJSON}
+}
+
+const parseFiles = (configJSON, tradeJSON) => {
+  configJSON = configFileArgOrDefault(configJSON)
+
+  if (!verifyConfigFile(configJSON)) program.help()
+  if (!verifyArgTradeFile(tradeJSON)) program.help()
+
+  const config = new Config(fileToObj(configJSON))
+  const trade = new Trade(fileToObj(tradeJSON))
+
+  return {config, trade}
+}
+
 /**
  *
  * Main Script
  *
  */
 
-let configJSON, tradeJSON
+const main = async () => {
+  const {configJSON, tradeJSON} = processArgs()
+  const {config, trade} = parseFiles(configJSON, tradeJSON)
 
-program
-  .description(
-    'Initiate a new trade with a given trade.json file.\n\n' +
-      '  The trade.json must conform to the schema in schema/trade.json.\n\n' +
-      "  NOTE: file needs to be hand crafted but we'll provide a builder soon."
-  )
-  .optionConfig()
-  .arguments('<trade.json>')
-  .action(function(jsonFile, options) {
-    tradeJSON = jsonFile
-    configJSON = options.config
+  const protocol = new Protocol(config, trade)
+
+  // TODO: new trade checks and logic belong in protocol .. move to there.
+  if (!verifyNewTradeTimelock(trade.timelock)) program.help()
+
+  console.log(`StellarPrepare running ...`)
+  return protocol.stellarPrepare().then(trade => {
+    const tradeFile = `trade-${trade.id}.json`
+    objToFile(tradeFile, trade)
+
+    const signature = sign(config.stellarAccountSecret, objToStr(trade))
+    const sigFile = `${tradeFile}.sig`
+    strToFile(sigFile, signature)
+
+    printResult(trade, tradeFile, sigFile)
   })
-  .parse(process.argv)
+}
 
-configJSON = configFileArgOrDefault(configJSON)
-
-if (!verifyConfigFile(configJSON)) program.help()
-if (!verifyArgTradeFile(tradeJSON)) program.help()
-
-const config = new Config(fileToObj(configJSON))
-const trade = new Trade(fileToObj(tradeJSON))
-const protocol = new Protocol(config, trade)
-
-// TODO: new trade checks and logic belong in protocol .. move to there.
-if (!verifyNewTradeTimelock(trade.timelock)) program.help()
-
-console.log(`StellarPrepare running ...`)
-protocol.stellarPrepare().then(trade => {
-  const tradeFile = `trade-${trade.id}.json`
-  objToFile(tradeFile, trade)
-
-  const signature = sign(config.stellarAccountSecret, objToStr(trade))
-  const sigFile = `${tradeFile}.sig`
-  strToFile(sigFile, signature)
-
-  printResult(trade, tradeFile, sigFile)
-})
+main().catch(error => console.error(`New Trade failed: ${error}`))

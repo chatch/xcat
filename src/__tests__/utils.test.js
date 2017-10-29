@@ -1,9 +1,13 @@
 import expect from 'expect'
 import {
+  bufToStr,
   isEthereumPublicAddress,
   isSha256Hash,
+  newSecretHashPair,
+  sha256,
   sign,
   stellarEncodeHash,
+  strToBuf,
   verify,
 } from '../utils'
 import stellarSdk from 'stellar-sdk'
@@ -40,6 +44,13 @@ describe('utils', () => {
           '0x60275d4c13b532f44d708de3ed59b80a04785fd68e50a1c8462c83632675b038'
         )
       ).toEqual(true)
+    })
+  })
+
+  describe('hash tools', () => {
+    it('newSecretHashPair prepares a matching pair and hash utils validate them', () => {
+      const {secret, hash} = newSecretHashPair()
+      expect(bufToStr(sha256(strToBuf(secret)))).toEqual(hash)
     })
   })
 

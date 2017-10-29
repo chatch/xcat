@@ -32,8 +32,8 @@ class Protocol {
    * After the instance is created status() should be called to determine the
    * state of the trade and the position in the protocol.
    *
-   * @param trade Trade instance
    * @param config Config instance
+   * @param trade Trade instance
    */
   constructor(config, trade) {
     if (!isClassWithName(config, 'Config'))
@@ -84,6 +84,11 @@ class Protocol {
         this.trade = this.tradeDB.save(this.trade)
         return this.trade
       })
+    // this.trade.stellar.holdingAccount =
+    //   'GCPRW6PXA2O7MF45Z5IWWBL5H3RXWQ6G7AZABADNWFXJQREP4Z4R3MLS'
+    // this.trade.initialSide = TradeSide.STELLAR
+    // this.trade = this.tradeDB.save(this.trade)
+    // return Promise.resolve(this.trade)
   }
 
   /**
@@ -93,6 +98,7 @@ class Protocol {
    */
   ethereumPrepare() {
     const t = this.trade
+    console.log(`ETHprepare`)
     return this.eth
       .createHashedTimelockContract(
         t.commitment,
@@ -111,6 +117,36 @@ class Protocol {
         this.tradeDB.save(t)
         return newContractId
       })
+  }
+
+  /**
+   * Fulfill the Ethereum side by having the withdrawer reveal hash(x) and get
+   * their ETH.
+   * @return txHash of the fulfill transaction
+   */
+  ethereumFulfill(preimage) {
+    return this.eth
+      .buyerWithdraw(
+        this.trade.ethereum.htlcContractId,
+        preimage,
+        this.trade.ethereum.withdrawer
+      )
+      .then(txReceipt => txReceipt.tx)
+  }
+
+  /**
+   * Fulfill the Stellar side by having the withdrawer reveal hash(x) and get
+   * their XLM.
+   * @return Promise resolving to txHash of the fulfill transaction OR throws
+   *    an error on failure
+   */
+  stellarFulfill(preimage) {
+    return this.stellar.buyerWithdraw(
+      this.trade.stellar.holdingAccount,
+      sdk.Keypair.fromSecret(this.config.stellarAccountSecret),
+      preimage,
+      this.trade.stellar.amount
+    )
   }
 
   /**
@@ -180,7 +216,7 @@ class Protocol {
 
     let contract
     if (this.trade.ethereum.htlcContractId) {
-      contract = await this.eth.getContract(this.trade.ethereum.htlcContractId)
+      contract = await this.getContract(this.trade.ethereum.htlcContractId)
       if (contract) {
         prepared = true
       } else {
@@ -214,9 +250,9 @@ class Protocol {
   }
 
   isEthereumFulfilled() {
-    return this.eth
-      .getContract(this.trade.ethereum.htlcContractId)
-      .then(contract => contract.withdrawn === true)
+    return this.getContract(this.trade.ethereum.htlcContractId).then(
+      contract => contract.withdrawn === true
+    )
   }
 
   isStellarFulfilled() {
@@ -259,8 +295,8 @@ class Protocol {
     if (stellarFulfilled === false && ethereumFulfilled === false)
       status =
         this.trade.initialSide === TradeSide.STELLAR
-          ? Status.STELLAR_FULFILL
-          : Status.ETHEREUM_FULFILL
+          ? Status.ETHEREUM_FULFILL
+          : Status.STELLAR_FULFILL
     else if (stellarFulfilled === false && ethereumFulfilled === true)
       status = Status.STELLAR_FULFILL
     else if (stellarFulfilled === true && ethereumFulfilled === false)
@@ -268,6 +304,15 @@ class Protocol {
     else status = Status.FINALISED
 
     return status
+  }
+
+  async getContract() {
+    const contract = await this.eth.getContract(
+      this.trade.ethereum.htlcContractId
+    )
+    const contractExists =
+      contract.sender !== '0x0000000000000000000000000000000000000000'
+    return contractExists ? contract : undefined
   }
 }
 Protocol.Status = Status
