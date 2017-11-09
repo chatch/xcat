@@ -84,39 +84,51 @@ class Protocol {
         this.trade = this.tradeDB.save(this.trade)
         return this.trade
       })
-    // this.trade.stellar.holdingAccount =
-    //   'GCPRW6PXA2O7MF45Z5IWWBL5H3RXWQ6G7AZABADNWFXJQREP4Z4R3MLS'
-    // this.trade.initialSide = TradeSide.STELLAR
-    // this.trade = this.tradeDB.save(this.trade)
-    // return Promise.resolve(this.trade)
   }
 
   /**
    * Prepare the ethereum side of the trade by creating the hashed timelock
-   *  contract.
-   * @return New contract id
+   * contract and additionally if initiated from the stellar side, create the
+   * refund to stellar transaction envelope..
+   * @return {
+   *    htlcId: id of new HTLC contract,
+   *    stellarRefundTx: signed refund tx (if initialSide of Trade is Stellar otherwise null)
+   * }
    */
-  ethereumPrepare() {
+  async ethereumPrepare() {
     const t = this.trade
     console.log(`ETHprepare`)
-    return this.eth
-      .createHashedTimelockContract(
-        t.commitment,
-        t.ethereum.depositor,
-        t.ethereum.withdrawer,
-        t.ethereum.amount,
-        t.timelock
+
+    // Create the Ethereum HTLC
+    t.ethereum.htlcContractId = await this.eth.createHashedTimelockContract(
+      t.commitment,
+      t.ethereum.depositor,
+      t.ethereum.withdrawer,
+      t.ethereum.amount,
+      t.timelock
+    )
+
+    // set initialSide in trade if not yet set
+    if (!has(t, 'initialSide') && !has(t.stellar, 'holdingAccount'))
+      this.trade.initialSide = TradeSide.ETHEREUM
+
+    // Create the refund tx for the Stellar seller
+    if (t.initialSide == TradeSide.STELLAR) {
+      t.stellar.refundTx = await this.stellar.sellerRefundTxEnvelope(
+        t.stellar.holdingAccount,
+        sdk.Keypair.fromSecret(this.config.stellarAccountSecret),
+        t.stellar.depositor,
+        t.timelock,
+        t.stellar.amount
       )
-      .then(newContractId => {
-        t.ethereum.htlcContractId = newContractId
-        if (
-          !has(this.trade, 'initialSide') &&
-          !has(this.trade.stellar, 'holdingAccount')
-        )
-          this.trade.initialSide = TradeSide.ETHEREUM
-        this.tradeDB.save(t)
-        return newContractId
-      })
+    }
+
+    this.tradeDB.save(t)
+
+    return {
+      htlcId: t.ethereum.htlcContractId,
+      stellarRefundTx: t.stellar.refundTx,
+    }
   }
 
   /**

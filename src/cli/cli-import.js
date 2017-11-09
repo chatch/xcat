@@ -97,9 +97,15 @@ const main = async () => {
       console.log(`ethereumPrepare call`)
       protocol
         .ethereumPrepare()
-        .then(contractId =>
+        .then(({contractId, refundEnvelope}) => {
           console.log(`Ethereum side prepared (htlc address: ${contractId})`)
-        )
+          if (refundEnvelope != null) {
+            console.log(
+              `Refund tx envelope prepared for the counterparty: ${refundEnvelope})`
+            )
+            console.log(`Send them the envelope`)
+          }
+        })
         .catch(err => console.error(`ethereumPrepare error: ${err}`))
     } else {
       console.log(`Wait for the counterparty to prepare the Ethereum side`)
