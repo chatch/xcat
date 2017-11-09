@@ -18,7 +18,9 @@
     "prepublish": "echo \"reenable 'nsp check'!\"",
     "pretest": "eslint src --fix",
     "test": "jest src",
-    "test-watch": "jest src --watch"
+    "test-watch": "jest src --watch",
+    "test-protocol":
+      "node_modules/babel-cli/bin/babel-node.js integration-test/protocol-scenario1.js"
   },
   "keywords": [
     "crosschain",
@@ -51,13 +53,9 @@
     "jest-cli": "^21.0.0",
     "nsp": "^2.6.3"
   },
-  "files": [
-    "lib"
-  ],
+  "files": ["lib"],
   "jest": {
-    "roots": [
-      "src/"
-    ],
+    "roots": ["src/"],
     "testEnvironment": "node",
     "transform": {
       "^.+\\.jsx?$": "babel-jest"
