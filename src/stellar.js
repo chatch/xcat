@@ -5,15 +5,15 @@ const initServer = (sdk, network) => {
   let horizonUrl
   if (network === 'public') {
     horizonUrl = 'https://horizon.stellar.org'
+    sdk.Network.usePublicNetwork()
   } else if (network === 'testnet') {
     horizonUrl = 'https://horizon-testnet.stellar.org'
+    sdk.Network.useTestNetwork()
   } else {
     horizonUrl = 'http://localhost:8000'
+    sdk.Network.use(new sdk.Network('Integration Test Network ; zulucrypto'))
     allowHttp = true
   }
-  network === 'public'
-    ? sdk.Network.usePublicNetwork()
-    : sdk.Network.useTestNetwork()
   return new sdk.Server(horizonUrl, {allowHttp: allowHttp})
 }
 
@@ -76,7 +76,7 @@ class Stellar {
       buyerPublicAddr,
       hashX
     )
-    tx.sign(newAccKeypair, sellerKeypair)
+    tx.sign(sellerKeypair, newAccKeypair)
     return this.server.submitTransaction(tx)
   }
 
