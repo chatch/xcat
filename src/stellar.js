@@ -160,15 +160,19 @@ class Stellar {
    * (or the hash(x) signature depending on the setup) to make the refund tx
    * valid.
    */
-  sellerRefundTx(
-    holdingAccount,
+  async sellerRefundTxEnvelope(
+    holdingAccountPublicKey,
     buyerKeypair,
     sellerPublicAddr,
     locktime,
     amount
   ) {
+    const holdingAccount = await this.server.loadAccount(
+      holdingAccountPublicKey
+    )
+
     const tb = new this.sdk.TransactionBuilder(holdingAccount, {
-      timeBounds: {minTime: locktime},
+      timebounds: {minTime: locktime, maxTime: 0},
     })
 
     tb.addOperation(
@@ -181,7 +185,7 @@ class Stellar {
 
     const tx = tb.build()
     tx.sign(buyerKeypair)
-    return tx
+    return tx.toEnvelope().toXDR('base64')
   }
 
   /**

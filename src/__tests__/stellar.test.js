@@ -4,6 +4,7 @@ import sdk from 'stellar-sdk'
 import Stellar from '../stellar'
 import {clone, stellarEncodeHash} from '../utils'
 
+import {AccountResponse} from 'stellar-sdk/lib/account_response'
 import loadAccountRspHoldAcc from './__data__/loadAccountRsp_holdingAccount'
 
 /*
@@ -41,22 +42,33 @@ const SIGNERS = [
 ]
 
 describe('stellar', () => {
+  let st
+
+  beforeEach(() => {
+    st = new Stellar(sdk, 'testnet')
+    // mock loadAccount - return a holding account
+    st.server.loadAccount = () =>
+      new Promise(resolve =>
+        resolve(new AccountResponse(loadAccountRspHoldAcc))
+      )
+  })
+
   it('creates a new instance for public network', () => {
-    const st = new Stellar(sdk, 'public')
-    expect(st.server.serverURL.toString()).toEqual(
+    const stPub = new Stellar(sdk, 'public')
+    expect(stPub.server.serverURL.toString()).toEqual(
       'https://horizon.stellar.org/'
     )
-    expect(st.sdk.Network.current()._networkPassphrase).toEqual(
+    expect(stPub.sdk.Network.current()._networkPassphrase).toEqual(
       sdk.Networks.PUBLIC
     )
   })
 
   it('creates a new instance for test network', () => {
-    const st = new Stellar(sdk, 'testnet')
-    expect(st.server.serverURL.toString()).toEqual(
+    const stTest = new Stellar(sdk, 'testnet')
+    expect(stTest.server.serverURL.toString()).toEqual(
       'https://horizon-testnet.stellar.org/'
     )
-    expect(st.sdk.Network.current()._networkPassphrase).toEqual(
+    expect(stTest.sdk.Network.current()._networkPassphrase).toEqual(
       sdk.Networks.TESTNET
     )
   })
@@ -129,11 +141,7 @@ describe('stellar', () => {
   })
 
   describe('isValidHoldingAccount', () => {
-    const st = new Stellar(sdk, 'testnet')
-
     it('returns true for a valid holding account', async () => {
-      st.server.loadAccount = () =>
-        new Promise(resolve => resolve(loadAccountRspHoldAcc))
       const retVal = await st.isValidHoldingAccount(
         'GCVG6GGMTEOERQ2QRALNLITHULKRHPUJE6RON7B2H5PEGLTODFD6DTLD',
         'GCG52B2LBYVTPUCIQFDB7VBXARK4OUV5NSEQ5R6T343FW7GR4MBUM3V6',
@@ -151,6 +159,43 @@ describe('stellar', () => {
         'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG'
       )
       expect(retVal).toEqual(false)
+    })
+  })
+
+  describe('sellerRefundTxEnvelope()', () => {
+    const holdingAccPublicKey = HOLDING_ACC
+    const buyerKP = sdk.Keypair.random()
+    const sellerKP = sdk.Keypair.random()
+    const locktime = Date.now() + 3600 // 1hr
+    const amount = 1000 // XLM
+
+    it('generates and signs the transaction', async () => {
+      const txEnvelopeStr = await st.sellerRefundTxEnvelope(
+        holdingAccPublicKey,
+        buyerKP,
+        sellerKP.publicKey(),
+        locktime,
+        amount
+      )
+
+      const txEnvelope = sdk.xdr.TransactionEnvelope.fromXDR(
+        txEnvelopeStr,
+        'base64'
+      )
+      const tx = new sdk.Transaction(txEnvelope)
+
+      expect(tx.source).toEqual(holdingAccPublicKey)
+      expect(tx.timeBounds.minTime).toEqual(String(locktime))
+      expect(tx.timeBounds.maxTime).toEqual('0')
+
+      expect(tx.operations.length).toEqual(1)
+      const payOp = tx.operations[0]
+      expect(payOp.type).toEqual('payment')
+      expect(payOp.amount).toEqual(String(amount))
+      expect(payOp.destination).toEqual(sellerKP.publicKey())
+
+      const sigs = txEnvelope.signatures()
+      expect(sigs.length).toEqual(1)
     })
   })
 })
