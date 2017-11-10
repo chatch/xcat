@@ -4,16 +4,16 @@ import Promise from 'bluebird'
 import Ethereum from '../ethereum'
 import {random32} from '../utils'
 import HTLC from '../contracts/HashedTimelock'
-import {rinkeby as rinkebyAddr} from '../contracts/deployment'
+import {testrpc as htlcAddr} from '../contracts/deployment'
 
 const RPC_ADDR = 'http://localhost:8545'
 
 describe('ethereum', () => {
   describe('constructor', () => {
     it('creates a new instance', () => {
-      const eth = new Ethereum(RPC_ADDR, HTLC, rinkebyAddr)
+      const eth = new Ethereum(RPC_ADDR, HTLC, htlcAddr)
       expect(eth.htlc.abi).toEqual(HTLC.abi)
-      expect(eth.htlc.address.toLowerCase()).toEqual(rinkebyAddr.toLowerCase())
+      expect(eth.htlc.address.toLowerCase()).toEqual(htlcAddr.toLowerCase())
     })
 
     it('throws if contract address is not a valid contract address', () => {
@@ -27,7 +27,7 @@ describe('ethereum', () => {
 
   describe('createHashedTimelockContract', () => {
     it('submits new contract tx and returns contract id', done => {
-      const eth = new Ethereum(RPC_ADDR, HTLC, rinkebyAddr)
+      const eth = new Ethereum(RPC_ADDR, HTLC, htlcAddr)
 
       const contractId = random32().toString('hex')
       const txReceipt = {logs: [{args: {contractId: contractId}}]}
