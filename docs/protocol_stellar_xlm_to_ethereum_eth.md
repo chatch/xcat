@@ -1,6 +1,6 @@
 # Stellar XLM to Ethereum ETH Token Swaps
 
-** DRAFT v0.1.1**
+** DRAFT v0.1.2**
 
 This protocol supports atomic trades/swaps between the native tokens of Stellar and Ethereum.
 
@@ -44,10 +44,9 @@ Protocol:
     ```
     Source: holding account
       Time bound: 6h from now
-      Operation: Payment to Alice
-        Seq: holding account current sequence
-        Amount: agreed amount of XLM
-      Signature: Bob
+      Operation: Account Merge
+        Destination: Alice
+      Signatures: Bob
     ```
 
     4. [Stellar] Alice submits Tx moving agreed XLM into the holding account:
@@ -71,8 +70,8 @@ Protocol:
     2. [Stellar] Bob now knows x and submits a TX to Stellar to get funds:
     ```
       Source: Holding Account
-      Operation: Payment to Bob
-        Amount: balance of holding account
+      Operation: Account Merge
+        Destination: Bob
       Signatures: bob, x
     ```
 
@@ -106,8 +105,8 @@ Protocol:
     1. [Stellar] Bob submits TX to Stellar claiming his funds and revealing x:
     ```
     Source: Holding Account
-    Operation: Payment to Bob
-      Amount: balance of holding account
+    Operation: Account Merge
+      Destination: Bob
     Signatures: bob, x
     ```
     2. [Ethereum] Alice calls withdraw() (now she knows x from Bobs Stellar tx)
