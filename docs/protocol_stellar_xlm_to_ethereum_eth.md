@@ -44,6 +44,7 @@ Protocol:
     ```
     Source: holding account
       Time bound: 6h from now
+      Sequence: holding account current sequence
       Operation: Account Merge
         Destination: Alice
       Signatures: Bob
