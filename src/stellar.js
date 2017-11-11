@@ -67,9 +67,7 @@ class Stellar {
     buyerPublicAddr,
     hashX
   ) {
-    const sellerAccount = await this.server.loadAccount(
-      sellerKeypair.publicKey()
-    )
+    const sellerAccount = await this.loadAccount(sellerKeypair.publicKey())
     const tx = this.createHoldingAccountTx(
       newAccKeypair,
       sellerAccount,
@@ -159,6 +157,7 @@ class Stellar {
    * transfer does not complete. The seller can add their signature
    * (or the hash(x) signature depending on the setup) to make the refund tx
    * valid.
+   * @return transaction envelope as a base64 string
    */
   async sellerRefundTxEnvelope(
     holdingAccountPublicKey,
@@ -167,9 +166,7 @@ class Stellar {
     locktime,
     amount
   ) {
-    const holdingAccount = await this.server.loadAccount(
-      holdingAccountPublicKey
-    )
+    const holdingAccount = await this.loadAccount(holdingAccountPublicKey)
 
     const tb = new this.sdk.TransactionBuilder(holdingAccount, {
       timebounds: {minTime: locktime, maxTime: 0},
@@ -188,23 +185,38 @@ class Stellar {
     return tx.toEnvelope().toXDR('base64')
   }
 
+  async sellerDeposit(sellerKeypair, holdingAccPublicAddr, amount) {
+    const sellerAccount = await this.loadAccount(sellerKeypair.publicKey())
+
+    const tx = this.sellerDepositTx(
+      sellerAccount,
+      sellerKeypair,
+      holdingAccPublicAddr,
+      amount
+    )
+    tx.sign(sellerKeypair)
+
+    return this.server
+      .submitTransaction(tx)
+      .then(txRsp => txRsp.hash)
+      .catch(err => {
+        throw new Error(`Stellar tx error: ${JSON.stringify(err, null, 2)}`)
+      })
+  }
+
   /**
    * Seller deposits funds into the holding account tx..
    */
   sellerDepositTx(sellerAccount, sellerKeypair, holdingAccPublicAddr, amount) {
-    const tb = new this.sdk.TransactionBuilder(sellerAccount)
-
-    tb.addOperation(
-      this.sdk.Operation.payment({
-        destination: holdingAccPublicAddr,
-        amount: String(amount),
-        asset: this.sdk.Asset.native(),
-      })
-    )
-
-    const tx = tb.build()
-    tx.sign(sellerKeypair)
-    return tx
+    return new this.sdk.TransactionBuilder(sellerAccount)
+      .addOperation(
+        this.sdk.Operation.payment({
+          destination: holdingAccPublicAddr,
+          amount: String(amount),
+          asset: this.sdk.Asset.native(),
+        })
+      )
+      .build()
   }
 
   /**
@@ -214,9 +226,7 @@ class Stellar {
    * @return Transaction hash on success; throws Error with transaction error details on failure
    */
   async buyerWithdraw(holdingAccountPublicKey, buyerKeypair, preimage, amount) {
-    const holdingAccount = await this.server.loadAccount(
-      holdingAccountPublicKey
-    )
+    const holdingAccount = await this.loadAccount(holdingAccountPublicKey)
 
     const tx = this.buyerWithdrawTx(
       holdingAccount,
@@ -253,8 +263,17 @@ class Stellar {
     return tb.build()
   }
 
-  loadAccount(publicKey) {
+  async loadAccount(publicKey) {
     return this.server.loadAccount(publicKey)
+  }
+
+  async getBalance(publicKey) {
+    return this.loadAccount(publicKey).then(accRec => {
+      const xlmBalance = Number(
+        accRec.balances.filter(b => (b.asset_type = 'native'))[0].balance
+      )
+      return xlmBalance
+    })
   }
 }
 

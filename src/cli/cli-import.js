@@ -110,7 +110,7 @@ const main = async () => {
     } else {
       console.log(`Wait for the counterparty to prepare the Ethereum side`)
     }
-  } else if (status === Protocol.Status.STELLAR_PREPARE) {
+  } else if (status === Protocol.Status.STELLAR_HOLDING_ACCOUNT) {
     // TODO: handle this once initiating from the Ethereum side is done
   }
 }

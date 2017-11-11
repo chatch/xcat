@@ -11,11 +11,14 @@ import {isClassWithName} from './utils'
 
 const Status = Object.freeze({
   INIT: 0,
-  STELLAR_PREPARE: 1,
-  ETHEREUM_PREPARE: 2,
-  STELLAR_FULFILL: 3,
-  ETHEREUM_FULFILL: 4,
-  FINALISED: 5,
+  STELLAR_HOLDING_ACCOUNT: 1,
+  STELLAR_REFUND_TX: 2,
+  STELLAR_DEPOSIT: 3,
+  ETHEREUM_HTLC: 4,
+  ETHEREUM_WITHDRAW: 5,
+  STELLAR_WITHDRAW: 6,
+  EXPIRED: 7,
+  FINALISED: 8,
   ERROR: 99,
   key: value => Object.keys(Status).filter(k => Status[k] === value)[0],
 })
@@ -86,18 +89,26 @@ class Protocol {
       })
   }
 
+  async stellarDeposit(sellerKeypair) {
+    const holdingAccountPublicAddr = this.trade.stellar.holdingAccount
+    const holdingAccountBalance = await this.stellar.getBalance(
+      holdingAccountPublicAddr
+    )
+    // deposit the difference - transfer to counterparty will be an account merge so the total will transfer
+    const amount = this.trade.stellar.amount - holdingAccountBalance
+    return this.stellar.sellerDeposit(
+      sellerKeypair,
+      holdingAccountPublicAddr,
+      amount
+    )
+  }
+
   /**
-   * Prepare the ethereum side of the trade by creating the hashed timelock
-   * contract and additionally if initiated from the stellar side, create the
-   * refund to stellar transaction envelope..
-   * @return {
-   *    htlcId: id of new HTLC contract,
-   *    stellarRefundTx: signed refund tx (if initialSide of Trade is Stellar otherwise null)
-   * }
+   * Prepare the Ethereum HTLC and deposit the funds in it at the same time
+   * @return id of new HTLC contract
    */
   async ethereumPrepare() {
     const t = this.trade
-    console.log(`ETHprepare`)
 
     // Create the Ethereum HTLC
     t.ethereum.htlcContractId = await this.eth.createHashedTimelockContract(
@@ -111,24 +122,20 @@ class Protocol {
     // set initialSide in trade if not yet set
     if (!has(t, 'initialSide') && !has(t.stellar, 'holdingAccount'))
       this.trade.initialSide = TradeSide.ETHEREUM
-
-    // Create the refund tx for the Stellar seller
-    if (t.initialSide == TradeSide.STELLAR) {
-      t.stellar.refundTx = await this.stellar.sellerRefundTxEnvelope(
-        t.stellar.holdingAccount,
-        sdk.Keypair.fromSecret(this.config.stellarAccountSecret),
-        t.stellar.depositor,
-        t.timelock,
-        t.stellar.amount
-      )
-    }
-
     this.tradeDB.save(t)
 
-    return {
-      htlcId: t.ethereum.htlcContractId,
-      stellarRefundTx: t.stellar.refundTx,
-    }
+    return t.ethereum.htlcContractId
+  }
+
+  stellarRefundTx() {
+    // TODO: check the status
+    return this.stellar.sellerRefundTxEnvelope(
+      this.trade.stellar.holdingAccount,
+      sdk.Keypair.fromSecret(this.config.stellarAccountSecret),
+      this.trade.stellar.depositor,
+      this.trade.timelock,
+      this.trade.stellar.amount
+    )
   }
 
   /**
@@ -210,76 +217,6 @@ class Protocol {
     // this.status = Status.ETHEREUM_PREPARE
   }
 
-  async isEthereumPrepared() {
-    let prepared = false
-
-    if (!this.trade.ethereum.htlcContractId) {
-      // no contract in trade record but look for one on the blockchain
-      const contractId = await this.eth.findContract(
-        this.trade.ethereum.depositor,
-        this.trade.ethereum.withdrawer,
-        this.trade.ethereum.amount,
-        this.trade.commitment,
-        this.trade.locktime
-      )
-      if (contractId) this.trade.ethereum.htlcContractId = contractId
-      this.tradeDB.save(this.trade)
-    }
-
-    let contract
-    if (this.trade.ethereum.htlcContractId) {
-      contract = await this.getContract(this.trade.ethereum.htlcContractId)
-      if (contract) {
-        prepared = true
-      } else {
-        throw new Error(
-          `Have htlcContractId ${this.trade.ethereum.htlcContractId} but it ` +
-            `does NOT exist in the HTLC smart contract ` +
-            `${this.eth.htlc.address}.`
-        )
-      }
-    }
-
-    return prepared
-  }
-
-  isStellarPrepared() {
-    if (!this.trade.stellar.holdingAccount) return Promise.resolve(false)
-    return this.stellar
-      .isValidHoldingAccount(
-        this.trade.stellar.holdingAccount,
-        this.trade.stellar.withdrawer,
-        this.trade.commitment
-      )
-      .then(isValid => {
-        if (!isValid)
-          throw new Error(
-            `Have holdingAccount ` +
-              `${this.trade.stellar.holdingAccount} but it is NOT valid.`
-          )
-        return isValid
-      })
-  }
-
-  isEthereumFulfilled() {
-    return this.getContract(this.trade.ethereum.htlcContractId).then(
-      contract => contract.withdrawn === true
-    )
-  }
-
-  isStellarFulfilled() {
-    return this.stellar
-      .loadAccount(this.trade.stellar.holdingAccount)
-      .then(holdAccRec => {
-        const xlmBalance = Number(
-          holdAccRec.balances.filter(b => (b.asset_type = 'native'))[0].balance
-        )
-        return xlmBalance === 0
-        // TODO: further checks: look for the operation that moved the funds
-        // to the receiver and check the exact amount was transferred
-      })
-  }
-
   /**
    * Determine the Status of the trade by querying the chains.
    *
@@ -290,32 +227,115 @@ class Protocol {
    *          eg. holding account defined in trade does not exist on chain
    */
   async status() {
-    const ethereumPrepared = await this.isEthereumPrepared()
-    const stellarPrepared = await this.isStellarPrepared()
+    if (!has(this.trade, 'initialSide') || !this.trade.initialSide)
+      return Status.INIT
+    return this.trade.initialSide === TradeSide.STELLAR
+      ? this.statusStellarInitiatedTrade()
+      : this.statusEthereumInitiatedTrade()
+  }
 
-    if (!stellarPrepared && !ethereumPrepared) return Status.INIT
-    else if (stellarPrepared && !ethereumPrepared)
-      return Status.ETHEREUM_PREPARE
-    else if (!stellarPrepared && ethereumPrepared) return Status.STELLAR_PREPARE
+  async statusStellarInitiatedTrade() {
+    if ((await this.stellarHoldingAccountCreated()) === false)
+      return Status.INIT
+    if ((await this.stellarRefundTxCreated()) === false)
+      return Status.STELLAR_HOLDING_ACCOUNT
+    if ((await this.stellarFundsDeposited()) === false)
+      return Status.STELLAR_REFUND_TX
+    if ((await this.isEthereumPrepared()) === false)
+      return Status.STELLAR_DEPOSIT
+    if ((await this.isEthereumFulfilled()) === false)
+      return Status.ETHEREUM_HTLC
+    if ((await this.isStellarFulfilled()) === false)
+      return Status.ETHEREUM_WITHDRAW
+    return Status.FINALISED
+  }
 
-    // Both sides prepared so now check for fulfillments
-    const stellarFulfilled = await this.isStellarFulfilled()
-    const ethereumFulfilled = await this.isEthereumFulfilled()
+  async statusEthereumInitiatedTrade() {
+    throw new Error('statusEthereumInitiatedTrade not yet implemented')
+  }
 
-    let status
+  stellarHoldingAccountCreated() {
+    if (!has(this.trade.stellar, 'holdingAccount')) return false
+    return this.stellar
+      .isValidHoldingAccount(
+        this.trade.stellar.holdingAccount,
+        this.trade.stellar.withdrawer,
+        this.trade.commitment
+      )
+      .then(isValid => {
+        if (!isValid)
+          throw new Error(
+            `Have holdingAccount ${this.trade.stellar.holdingAccount} ` +
+              `but it is NOT valid.`
+          )
+        return isValid
+      })
+  }
 
-    if (stellarFulfilled === false && ethereumFulfilled === false)
-      status =
-        this.trade.initialSide === TradeSide.STELLAR
-          ? Status.ETHEREUM_FULFILL
-          : Status.STELLAR_FULFILL
-    else if (stellarFulfilled === false && ethereumFulfilled === true)
-      status = Status.STELLAR_FULFILL
-    else if (stellarFulfilled === true && ethereumFulfilled === false)
-      status = Status.ETHEREUM_FULFILL
-    else status = Status.FINALISED
+  stellarRefundTxCreated() {
+    return Promise.resolve(has(this.trade.stellar, 'refundTx'))
 
-    return status
+    // TODO: validate the contents of the envelope
+  }
+
+  stellarFundsDeposited() {
+    return this.stellar
+      .getBalance(this.trade.stellar.holdingAccount)
+      .then(balance => balance === this.trade.stellar.amount)
+  }
+
+  async isEthereumPrepared() {
+    if (!has(this.trade.ethereum, 'htlcContractId')) {
+      // no contract in trade record but look for one on the blockchain
+      const contractId = await this.eth.findContract(
+        this.trade.ethereum.depositor,
+        this.trade.ethereum.withdrawer,
+        this.trade.ethereum.amount,
+        this.trade.commitment,
+        this.trade.timelock
+      )
+      console.log(`isEthPre: contractID: ${contractId}`)
+
+      if (contractId) {
+        this.trade.ethereum.htlcContractId = contractId
+        this.tradeDB.save(this.trade)
+      }
+    }
+
+    let prepared = false
+    console.log(this.trade.ethereum.htlcContractId)
+    if (has(this.trade.ethereum, 'htlcContractId')) {
+      const contract = await this.getContract(
+        this.trade.ethereum.htlcContractId
+      )
+      console.log(typeof contract)
+      console.log(JSON.stringify(contract, null, 2))
+      if (contract) {
+        console.log(`set prepared`)
+        prepared = true
+      } else {
+        throw new Error(
+          `Have htlcContractId ${this.trade.ethereum.htlcContractId} but it ` +
+            `does NOT exist in the HTLC smart contract ` +
+            `${this.eth.htlc.address}.`
+        )
+      }
+    }
+    console.log(`return prepared: ${prepared}`)
+
+    return prepared
+  }
+
+  isEthereumFulfilled() {
+    return this.getContract(this.trade.ethereum.htlcContractId).then(
+      contract => contract.withdrawn === true
+    )
+  }
+
+  isStellarFulfilled() {
+    return this.stellar
+      .getBalance(this.trade.stellar.holdingAccount)
+      .then(balance => balance === 0)
   }
 
   async getContract() {
@@ -327,6 +347,8 @@ class Protocol {
     return contractExists ? contract : undefined
   }
 }
+
 Protocol.Status = Status
+Protocol.TradeSide = TradeSide
 
 export default Protocol
