@@ -153,6 +153,31 @@ class Stellar {
   }
 
   /**
+   * Checks if the holding account has been merged already.
+   *
+   * @param holdingAccountAddress Holding account public key
+   * @param withdrawerAddress Address of the withdrawer
+   */
+  async holdingAccountMerged(holdingAccountAddress, withdrawerAddress) {
+    const opFilter = rsp =>
+      rsp.records.filter(
+        rec =>
+          rec.type === 'account_merge' && rec.account === holdingAccountAddress
+      )
+    const matchingOps = await this.server
+      .operations()
+      .forAccount(withdrawerAddress)
+      .order('desc')
+      .call()
+      .then(opFilter)
+      .catch(e => {
+        console.error(`unknown error fetching operations`, e)
+        throw e
+      })
+    return matchingOps.length === 1
+  }
+
+  /**
    * Buyer creates and signs a refund tx for the seller for the case the
    * transfer does not complete. The seller can add their signature
    * (or the hash(x) signature depending on the setup) to make the refund tx
@@ -251,13 +276,11 @@ class Stellar {
    * Create transaction for the buyer withdrawal: buyer withdraws funds from
    *  the holding account tx revealing preimage (x) by adding x as a signer.
    */
-  buyerWithdrawTx(holdingAccount, buyerPublicKey, amount) {
+  buyerWithdrawTx(holdingAccount, buyerPublicKey) {
     const tb = new this.sdk.TransactionBuilder(holdingAccount)
     tb.addOperation(
-      this.sdk.Operation.payment({
+      this.sdk.Operation.accountMerge({
         destination: buyerPublicKey,
-        amount: String(amount),
-        asset: this.sdk.Asset.native(),
       })
     )
     return tb.build()

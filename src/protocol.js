@@ -235,41 +235,39 @@ class Protocol {
   }
 
   async statusStellarInitiatedTrade() {
-    if ((await this.stellarHoldingAccountCreated()) === false)
+    if (!has(this.trade.stellar, 'holdingAccount')) return Status.INIT
+
+    const validHoldingAccount = await this.stellar.isValidHoldingAccount(
+      this.trade.stellar.holdingAccount,
+      this.trade.stellar.withdrawer,
+      this.trade.commitment
+    )
+    const accountMerged = await this.stellar.holdingAccountMerged(
+      this.trade.stellar.holdingAccount,
+      this.trade.stellar.withdrawer
+    )
+
+    if (validHoldingAccount === false && accountMerged === false)
       return Status.INIT
-    if ((await this.stellarRefundTxCreated()) === false)
-      return Status.STELLAR_HOLDING_ACCOUNT
-    if ((await this.stellarFundsDeposited()) === false)
-      return Status.STELLAR_REFUND_TX
-    if ((await this.isEthereumPrepared()) === false)
-      return Status.STELLAR_DEPOSIT
-    if ((await this.isEthereumFulfilled()) === false)
-      return Status.ETHEREUM_HTLC
-    if ((await this.isStellarFulfilled()) === false)
-      return Status.ETHEREUM_WITHDRAW
+
+    if (validHoldingAccount === true) {
+      if ((await this.stellarRefundTxCreated()) === false)
+        return Status.STELLAR_HOLDING_ACCOUNT
+      if ((await this.stellarFundsDeposited()) === false)
+        return Status.STELLAR_REFUND_TX
+      if ((await this.isEthereumPrepared()) === false)
+        return Status.STELLAR_DEPOSIT
+      if ((await this.isEthereumFulfilled()) === false)
+        return Status.ETHEREUM_HTLC
+      if ((await this.isStellarFulfilled()) === false)
+        return Status.ETHEREUM_WITHDRAW
+    }
+
     return Status.FINALISED
   }
 
   async statusEthereumInitiatedTrade() {
     throw new Error('statusEthereumInitiatedTrade not yet implemented')
-  }
-
-  stellarHoldingAccountCreated() {
-    if (!has(this.trade.stellar, 'holdingAccount')) return false
-    return this.stellar
-      .isValidHoldingAccount(
-        this.trade.stellar.holdingAccount,
-        this.trade.stellar.withdrawer,
-        this.trade.commitment
-      )
-      .then(isValid => {
-        if (!isValid)
-          throw new Error(
-            `Have holdingAccount ${this.trade.stellar.holdingAccount} ` +
-              `but it is NOT valid.`
-          )
-        return isValid
-      })
   }
 
   stellarRefundTxCreated() {
@@ -294,8 +292,6 @@ class Protocol {
         this.trade.commitment,
         this.trade.timelock
       )
-      console.log(`isEthPre: contractID: ${contractId}`)
-
       if (contractId) {
         this.trade.ethereum.htlcContractId = contractId
         this.tradeDB.save(this.trade)
@@ -303,15 +299,11 @@ class Protocol {
     }
 
     let prepared = false
-    console.log(this.trade.ethereum.htlcContractId)
     if (has(this.trade.ethereum, 'htlcContractId')) {
       const contract = await this.getContract(
         this.trade.ethereum.htlcContractId
       )
-      console.log(typeof contract)
-      console.log(JSON.stringify(contract, null, 2))
       if (contract) {
-        console.log(`set prepared`)
         prepared = true
       } else {
         throw new Error(
@@ -321,7 +313,6 @@ class Protocol {
         )
       }
     }
-    console.log(`return prepared: ${prepared}`)
 
     return prepared
   }
