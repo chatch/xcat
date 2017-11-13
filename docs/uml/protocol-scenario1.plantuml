@@ -1,0 +1,70 @@
+' xcat protocol for Stellar XLM to Ethereum ETH swaps - sequence diagram
+@startuml
+skinparam BoxPadding 20
+
+database trade.json as trade
+note left of trade
+Defines:
+
+ethereum addresses
+stellar addresses
+amount ETH
+amount XLM
+timelock
+hash(x)
+
+see JSON Schema:
+  https://github.com/chatch/xcat/
+  blob/master/src/schema/trade.json
+end note
+
+actor Alice
+actor Bob
+
+legend top
+Stellar Ethereum Atomic Swaps: Scenario 1 - initiated on Stellar side
+Protocol details:   https://github.com/chatch/xcat/blob/master/docs/protocol_stellar_xlm_to_ethereum_eth.md
+end legend
+
+
+box "Ethereum Network" #A9C5E6
+participant Bob as bobE << Account >>
+participant Alice as aliceE << Account >>
+participant HashedTimelock as htlc << Smart Contract >>
+end box
+
+box "Stellar Network" #eebb18
+participant Bob as bobS << Account >>
+participant Alice as aliceS << Account >>
+participant HoldingContract as hc << Account >>
+end box
+
+Alice<->Bob:agree trade\nshare addresses
+Alice->Alice:2.1 creates preimage x
+Alice->trade:creates trade file
+
+activate hc
+aliceS->hc:2.2 create holding account\n[signers: Bob, hash(x)]
+hc-->aliceS:address
+deactivate hc
+
+Bob->Alice:2.3 Creates and signs\nrefund transaction\nenvelope
+
+activate hc
+aliceS->hc:2.4 Payment <XLM to swap>
+deactivate hc
+
+activate htlc
+bobE->htlc:2.5 newContract
+htlc-->bobE:contract address
+aliceE->htlc:3.1 withdraw
+htlc-->aliceE:ETH
+deactivate htlc
+
+activate hc
+bobS->hc:3.2 AccountMerge
+hc--->bobS:XLM and account merge
+deactivate hc
+
+
+@enduml
