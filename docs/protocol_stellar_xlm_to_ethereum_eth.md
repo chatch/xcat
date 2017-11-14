@@ -4,19 +4,20 @@
 
 This protocol supports atomic trades/swaps between the native tokens of Stellar and Ethereum.
 
-See (protocol_stellar_asset_to_ethereum_erc20.md) for Stellar Asset to Ethereum ERC20 swaps.
-
 Two scenarios are described below. Scenario 1 is initiated from Stellar and Scenario 2 is initiated from Ethereum.
 
 
 ## Scenario 1 (S1): Swap initiated by XLM holder on Stellar
 
-Summary:
+### Summary
 * Alice initiates the setup process on Stellar side
 * Alice sells XLM to Bob
 * Bob sells ETH to Alice
 
-Protocol:
+### Sequence Diagram
+![sequence diagram](uml/protocol-scenario1.png)
+
+### Protocol
 
 1. Agreement
     1.  Agree to terms over some channel (telegram, phone call, whatever ..) and define the amounts to trade
@@ -83,12 +84,12 @@ NOTES:
 
 ## Scenario 2 (S2): Swap initiated by ETH holder on Ethereum
 
-Summary:
+### Summary
 * Bob initiates the setup process on Ethereum side
 * Alice sells XLM to Bob
 * Bob sells ETH to Alice
 
-Protocol:
+### Protocol
 
 1. Agreement
   * same as in S1 1
