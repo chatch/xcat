@@ -67,13 +67,10 @@ class Protocol {
    */
   stellarPrepare() {
     const newAccKeypair = sdk.Keypair.random()
-    const sellerKeypair = sdk.Keypair.fromSecret(
-      this.config.stellarAccountSecret
-    )
     return this.stellar
       .createHoldingAccount(
         newAccKeypair,
-        sellerKeypair,
+        this.stellarKeypair(),
         this.trade.stellar.withdrawer,
         this.trade.commitment
       )
@@ -89,11 +86,18 @@ class Protocol {
       })
   }
 
-  async stellarDeposit(sellerKeypair) {
+  async stellarDeposit() {
+    if (!this.isStellarDepositor())
+      throw new Error(
+        'Only the trade Stellar depositor can call stellarDeposit()'
+      )
+    const sellerKeypair = this.stellarKeypair()
+
     const holdingAccountPublicAddr = this.trade.stellar.holdingAccount
     const holdingAccountBalance = await this.stellar.getBalance(
       holdingAccountPublicAddr
     )
+
     // deposit the difference - transfer to counterparty will be an account merge so the total will transfer
     const amount = this.trade.stellar.amount - holdingAccountBalance
     return this.stellar.sellerDeposit(
@@ -127,15 +131,19 @@ class Protocol {
     return t.ethereum.htlcContractId
   }
 
-  stellarRefundTx() {
+  async stellarRefundTx() {
     // TODO: check the status
-    return this.stellar.sellerRefundTxEnvelope(
+
+    this.trade.stellar.refundTx = await this.stellar.sellerRefundTxEnvelope(
       this.trade.stellar.holdingAccount,
-      sdk.Keypair.fromSecret(this.config.stellarAccountSecret),
+      this.stellarKeypair(),
       this.trade.stellar.depositor,
       this.trade.timelock,
       this.trade.stellar.amount
     )
+    this.tradeDB.save(this.trade)
+
+    return this.trade.stellar.refundTx
   }
 
   /**
@@ -162,7 +170,7 @@ class Protocol {
   stellarFulfill(preimage) {
     return this.stellar.buyerWithdraw(
       this.trade.stellar.holdingAccount,
-      sdk.Keypair.fromSecret(this.config.stellarAccountSecret),
+      this.stellarKeypair(),
       preimage,
       this.trade.stellar.amount
     )
@@ -175,7 +183,7 @@ class Protocol {
 
   /**
    * Trade protocol status is at a place where we are waiting for the
-  * counterparty to take the next step.
+   * counterparty to take the next step.
    * @return bool
    */
   waitingForCounterparty() {}
@@ -271,7 +279,12 @@ class Protocol {
   }
 
   stellarRefundTxCreated() {
-    return Promise.resolve(has(this.trade.stellar, 'refundTx'))
+    const st = this.trade.stellar
+    return Promise.resolve(
+      has(st, 'refundTx') &&
+        typeof st.refundTx === 'string' &&
+        st.refundTx.length > 0
+    )
 
     // TODO: validate the contents of the envelope
   }
@@ -327,6 +340,30 @@ class Protocol {
     return this.stellar
       .getBalance(this.trade.stellar.holdingAccount)
       .then(balance => balance === 0)
+  }
+
+  isStellarDepositor() {
+    return this.trade.stellar.depositor === this.stellarPublicAddress()
+  }
+
+  isStellarWithdrawer() {
+    return this.trade.stellar.withdrawer === this.stellarPublicAddress()
+  }
+
+  isEthereumDepositor() {
+    return this.trade.ethereum.depositor === this.config.ethereumPublicAddress
+  }
+
+  isEthereumWithdrawer() {
+    return this.trade.ethereum.withdrawer === this.config.ethereumPublicAddress
+  }
+
+  stellarKeypair() {
+    return sdk.Keypair.fromSecret(this.config.stellarAccountSecret)
+  }
+
+  stellarPublicAddress() {
+    return this.stellarKeypair().publicKey()
   }
 
   async getContract() {

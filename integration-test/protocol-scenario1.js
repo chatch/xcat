@@ -123,7 +123,7 @@ const main = async () => {
   expect(await protocol1.status()).toEqual(Protocol.Status.STELLAR_REFUND_TX)
   // TODO:
   //  protocol.validate the refundtx !
-  await protocol1.stellarDeposit(sSellerKP)
+  await protocol1.stellarDeposit()
   expect(await protocol1.status()).toEqual(Protocol.Status.STELLAR_DEPOSIT)
   expect(await protocol2.status()).toEqual(Protocol.Status.STELLAR_DEPOSIT)
   log(`party1 deposited XLM`)
