@@ -108,6 +108,13 @@ docker run --rm -it -p 8545:8545 chatch/ethereumjs-testrpc:4.1.3 -m "$PHRASE" $@
 ```
 NOTE: PHRASE is important as the integration tests expect specific accounts to exist.
 
+Deploy the HashedTimelock smart contract:
+```
+git clone https://github.com/chatch/hashed-timelock-contract-ethereum
+npm i -g truffle
+truffle migrate
+```
+
 Run tests:
 ```
 npm run test
