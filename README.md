@@ -2,12 +2,26 @@
 A tool for doing cross chain atomic trades via a [cli](src/cli) or [api](src/protocol.js).
 
 ## Protocol
+
 Stellar XLM <-> Ethereum ETH
  * [protocol_stellar_xlm_to_ethereum_eth.md](docs/protocol_stellar_xlm_to_ethereum_eth.md)
  * [protocol-scenario1.js](integration-test/protocol-scenario1.js) - script that walks through scenario 1 of the protocol
  
 Stellar Asset <-> Ethereum ERC20 Token
  * [protocol_stellar_asset_to_ethereum_erc20.md](docs/protocol_stellar_asset_to_ethereum_erc20.md) TODO
+
+## Progress
+
+Native Token Swap (XLM <-> ETH)
+- [x] Protocol API Scenario 1 (Stellar side initiated)
+- [ ] Protocol API Scenario 2 (Ethereum side initiated)
+- [x] CLI Scenario 1 (Stellar side initiated)
+- [ ] CLI Scenario 2 (Ethereum side initiated)
+
+The protocol for trades initiated from the Stellar side is working as demonstrated by this [script](integration-test/protocol-scenario1.js) which exercises both parties along the path of least resistance. More testing is required around refunds and edge cases. The command line interface (see below) also works for the simple case where each party follows the protocol.
+
+Asset to Token Swap (Asset <-> ERC20)
+- [ ] TODO!
 
 ## Trade.json
 
