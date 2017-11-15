@@ -62,8 +62,6 @@ Example:
 
 ## CLI
  
-npm run cli
- 
 ```
   Usage: cli [options] [command]
 
@@ -96,31 +94,31 @@ After 'import' only the 'status' command is needed. It will scan the ledgers, de
 
 ## Develop
 
-Start Stellar private network
+### Start Stellar private network
 ```
 docker run -it --rm --name horizon-integrationnet -p 8000:8000 zulucrypto/stellar-integration-test-network
 ```
 
-Start Ethereum local network:
+### Start Ethereum local network
 ```
 PHRASE="end staff push admit delay abandon ability nurse renew alert stomach jazz"
 docker run --rm -it -p 8545:8545 chatch/ethereumjs-testrpc:4.1.3 -m "$PHRASE" $@
 ```
 NOTE: PHRASE is important as the integration tests expect specific accounts to exist.
 
-Deploy the HashedTimelock smart contract:
+### Deploy HashedTimelock smart contract
 ```
 git clone https://github.com/chatch/hashed-timelock-contract-ethereum
 npm i -g truffle
 truffle migrate
 ```
 
-Run tests:
+### Run tests
 ```
 npm run test
 ```
 
-Run integration test:
+### Run integration test
 ```
 npm run test-protocol
 ```
