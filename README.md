@@ -1,6 +1,8 @@
 # xcat
 A tool for doing cross chain atomic trades via a [cli](src/cli) or [api](src/protocol.js).
 
+Only trades between Stellar and Ethereum are supported at this stage.
+
 ## Protocol
 
 Stellar XLM <-> Ethereum ETH
@@ -17,8 +19,18 @@ Native Token Swap (XLM <-> ETH)
 - [ ] Protocol API Scenario 2 (Ethereum side initiated)
 - [x] CLI Scenario 1 (Stellar side initiated)
 - [ ] CLI Scenario 2 (Ethereum side initiated)
+- [ ] Built in communication channel (Telehash Links?)
 
 The protocol for trades initiated from the Stellar side is working as demonstrated by this [script](integration-test/protocol-scenario1.js) which exercises both parties along the path of least resistance. More testing is required around refunds and edge cases. The command line interface (see below) also works for the simple case where each party follows the protocol.
+
+Communication would ideally be done by the tool over some channel rather then having users manually send each other data (see last todo item above). These 2 peices require manual sharing:
+ * initial trade.json and trade.json.sig signature (intiater sends after running 'new', counterparty run 'verifysig' and 'import' commands)
+ * refund tx envelope (party 2 sends to the initiater, initiater puts it in the trade.json file and runs 'status' to continue with the trade)
+
+These peices can be found by scanning the ledgers and so don't require communication:
+ * Ethereum HTLC contract id
+ * hash(x) preimage (after submission)
+ * deposit and withdraw transactions on both sides
 
 Asset to Token Swap (Asset <-> ERC20)
 - [ ] TODO!
@@ -47,10 +59,10 @@ Example:
   }
 }
 ```
- 
+
 ## CLI
  
-babel-node src/cli/cli
+npm run cli
  
 ```
   Usage: cli [options] [command]
@@ -71,3 +83,13 @@ babel-node src/cli/cli
     verifysig|v <trade.json> <trade.json.sig>  Verify signature for a trade.json
     help [cmd]                                 display help for [cmd]
 ```
+
+### Summary
+
+```
+party1> npm run cli new ./trade_localnet.json
+party2> npm run cli verify trade-little-eagle-37.json trade-little-eagle-37.json.sig
+party2> npm run cli import trade-little-eagle-37.json
+party1+2> npm run cli status little-eagle-37
+```
+After 'import' only the 'status' command is needed. It will scan the ledgers, determine what the next step is for the party running it and carry it out as required.
