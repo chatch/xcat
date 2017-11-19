@@ -1,6 +1,6 @@
 # Stellar Assets to Ethereum ERC20 Token Swaps
 
-** DRAFT v0.0.1**
+** DRAFT v0.0.2**
 
 This protocol supports atomic trades/swaps between the tokens on the Stellar and Ethereum networks.
 
@@ -8,7 +8,7 @@ Two scenarios are described below. Scenario 1 is initiated from Stellar and Scen
 
 NOTE:
  * examples trade between a Stellar CNY Asset and an Ethereum OMG token but the goal is to support any combination
- * uses the [HashedTimelockERC20 smart contract](https://github.com/chatch/hashed-timelock-contract-ethereum/blob/ERC20_HTLC/contracts/HashedTimelockERC20.sol) to lock up tokens on Ethereum
+ * uses the [HashedTimelockERC20](https://github.com/chatch/hashed-timelock-contract-ethereum/blob/ERC20_HTLC/contracts/HashedTimelockERC20.sol) smart contract to lock up tokens on Ethereum
  * no consideration given to authorized flag assets yet. the holding account would need auth before continuing the trade OR some other mechanism would be required handle these.
  * support for tokens that implement ERC223 could be added later (advantage being no approve step required - tokens sent in the same transaction as the newContract call transaction)
 
@@ -32,6 +32,7 @@ NOTE:
 2. Setup
     1. Alice generates secret x
     2. [Stellar] Alice submits Tx:
+    ```
       Operation: Create Account
                     Destination: hold acc
                     Balance: 50 (includes +10 for hash(x) signer, +10 for Bob signer, +10 for CNY trustline)
