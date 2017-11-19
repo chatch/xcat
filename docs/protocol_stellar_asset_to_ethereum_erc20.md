@@ -1,7 +1,5 @@
 # Stellar Assets to Ethereum ERC20 Token Swaps
 
-# UNFINISHED - still need to sort out the HashedTimelock contract to work with ERC20 ....
-
 ** DRAFT v0.0.1**
 
 This protocol supports atomic trades/swaps between the tokens on the Stellar and Ethereum networks.
@@ -10,9 +8,9 @@ Two scenarios are described below. Scenario 1 is initiated from Stellar and Scen
 
 NOTE:
  * examples trade between a Stellar CNY Asset and an Ethereum OMG token but the goal is to support any combination
+ * uses the [HashedTimelockERC20 smart contract](https://github.com/chatch/hashed-timelock-contract-ethereum/blob/ERC20_HTLC/contracts/HashedTimelockERC20.sol) to lock up tokens on Ethereum
  * no consideration given to authorized flag assets yet. the holding account would need auth before continuing the trade OR some other mechanism would be required handle these.
- * requires a version of the [HashedTimelock smart contract](https://github.com/chatch/hashed-timelock-contract-ethereum) that supports tokens but none exists yet
- * ERC223 support could be added later for compatible tokens (flush out below first ... IS pay in one tx an advantage?)
+ * support for tokens that implement ERC223 could be added later (advantage being no approve step required - tokens sent in the same transaction as the newContract call transaction)
 
 ## Scenario 1 (S1): Swap initiated by Stellar Asset holder
 
@@ -69,16 +67,17 @@ NOTE:
         Amount: agreed amount of CNY
     ```
 
-    5. [Ethereum] Bob calls newContract() on Ethereum hashed timelock contract:
+    5. [Ethereum] Bob calls newContract() on HashedTimelockERC20 Ethereum contract:
     ```
       receiver = Alices Ethereum address
       hashLock = hash(x)
       timelock = 6h from now
-      msg.value = agreed OMG amount
+      token = OMG token contract address
+      amount = agreed OMG amount
     ```
 3. Exchange
     1. [Ethereum] Alice calls withdraw() on the contract revealing x
-       this transfers the OMG to her account
+       calls transfer on the OMG token contract transfering change ownership for 'amount' tokens to Alice
 
     2. [Stellar] Bob now knows x and submits a TX to Stellar to get funds:
     ```
