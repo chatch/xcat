@@ -36,7 +36,7 @@ NOTE:
       Operation: Create Account
                     Destination: hold acc
                     Balance: 50 (includes +10 for hash(x) signer, +10 for Bob signer, +10 for CNY trustline)
-      Operation: Allow Trust:
+      Operation: Change Trust:
                     Source: hold acc
                     Line: CNY / CNY Issuer
                     Limit: agreed amount 
