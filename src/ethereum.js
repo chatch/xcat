@@ -8,20 +8,6 @@ const txContractId = txReceipt => txReceipt.logs[0].args.contractId
 
 const ethToWei = eth => Web3Utils.toWei(eth, 'ether')
 
-// Cheating bytecode comparison that compares the last 3000 bytes of the tail.
-// If comparing all then the intialisation code embedded in one of the 2 strings
-// causes a difference. For now this is better then no comparison at all.
-//
-// TODO: compare the FULL code from the contract creation transaction
-//      see here: https://ethereum.stackexchange.com/a/221
-//      Probably best to have the htlc project export that bytecode with the
-//      HashedTimelock.json
-const equalByteCodeTails = (hexStr1, hexStr2) => {
-  const tailCmpLen = 3000
-  const tail = str => str.substring(str.length - tailCmpLen)
-  return tail(hexStr1) === tail(hexStr2)
-}
-
 const contractArrToObj = c => {
   return {
     sender: c[0],
@@ -42,20 +28,18 @@ const validateSetup = (web3, htlcContractObj, htlcContractAddr) => {
         `is not a valid contract address`
     )
 
-  const htlcByteCode = web3.eth.getCode(htlcContractAddr)
-  if (htlcByteCode === '0x0')
+  const htlcBytecode = web3.eth.getCode(htlcContractAddr)
+  if (htlcBytecode === '0x0')
     throw new Error(
       `No code deployed at HashedTimelock deployment address ` +
         `[${htlcContractAddr}] `
     )
 
-  if (
-    equalByteCodeTails(htlcByteCode, htlcContractObj.unlinked_binary) !== true
-  )
+  if (htlcBytecode !== htlcContractObj.deployedBytecode)
     throw new Error(
       `Wrong code deployed at HashedTimelock deployment address ` +
         `[${htlcContractAddr}]\n\nExpected:[\n` +
-        `[${htlcContractObj.unlinked_binary}]\n\nGot:[\n${htlcByteCode}\n]\n`
+        `[${htlcContractObj.deployedBytecode}]\n\nGot:[\n${htlcBytecode}\n]\n`
     )
 }
 
@@ -81,6 +65,9 @@ class Ethereum {
     // htlc contract handle (web3) - for events/logs only
     const HTLCWeb3 = this.web3.eth.contract(htlcContractObj.abi)
     this.htlcWeb3 = HTLCWeb3.at(htlcContractAddr)
+
+    // TODO: promisify web3 async handles and move async code out of contructor (for metamask consumption)
+    // this.web3.eth.getCodeAsync = Promise.promisify(this.web3.eth.getCode)
   }
 
   /**

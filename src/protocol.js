@@ -1,11 +1,11 @@
 import sdk from 'stellar-sdk'
 import Promise from 'bluebird'
 import has from 'lodash/has'
+import HTLC from 'ethereum-htlc/abi/HashedTimelock'
+import {htlc as htlcDeployment} from 'ethereum-htlc/deployment'
 
 import Stellar from './stellar'
 import Ethereum from './ethereum'
-import HTLC from './contracts/HashedTimelock'
-import htlcDeployment from './contracts/deployment'
 import TradeDB from './trade-db'
 import {isClassWithName} from './utils'
 

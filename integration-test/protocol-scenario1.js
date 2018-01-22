@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import sdk from 'stellar-sdk'
 import Web3 from 'web3'
 import expect from 'expect'
@@ -77,8 +76,7 @@ const configParty2 = {
 }
 
 const log = msg => console.info(`INFO: ${msg}`)
-const logError = msg =>
-  console.error(chalk.red(`ERROR: ${JSON.stringify(msg, null, 2)}`))
+// const logError = msg => console.error(`ERROR: ${JSON.stringify(msg, null, 2)}`)
 
 const main = async () => {
   /*

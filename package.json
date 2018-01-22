@@ -1,7 +1,7 @@
 {
   "name": "xcat",
-  "version": "0.0.1",
-  "description": "Cross chain atomic trades (xcat) library and cli",
+  "version": "0.0.2",
+  "description": "Cross chain atomic trades protocol and api for trades between Stellar and Ethereum",
   "repository": "chatch/xcat",
   "license": "GPL-3.0",
   "author": {
@@ -14,13 +14,11 @@
   "scripts": {
     "build": "$npm_package_config_build_cmd",
     "build-watch": "$npm_package_config_build_cmd --watch",
-    "cli": "node_modules/babel-cli/bin/babel-node.js src/cli/cli.js",
     "prepublish": "echo \"reenable 'nsp check'!\"",
     "pretest": "eslint src --fix",
     "test": "jest src",
     "test-watch": "jest src --watch",
-    "test-protocol":
-      "node_modules/babel-cli/bin/babel-node.js integration-test/protocol-scenario1.js"
+    "test-protocol": "node_modules/babel-cli/bin/babel-node.js integration-test/protocol-scenario1.js"
   },
   "keywords": [
     "crosschain",
@@ -33,10 +31,8 @@
   "dependencies": {
     "ajv": "^5.2.2",
     "bluebird": "^3.5.0",
-    "chalk": "^2.1.0",
-    "commander": "^2.11.0",
+    "ethereum-htlc": "^0.0.4",
     "human-readable-ids": "^1.0.3",
-    "inquirer": "^3.3.0",
     "lodash": "^4.17.4",
     "stellar-sdk": "0.7.3",
     "truffle-contract": "3.0.0",
@@ -53,9 +49,13 @@
     "jest-cli": "^21.0.0",
     "nsp": "^2.6.3"
   },
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "jest": {
-    "roots": ["src/"],
+    "roots": [
+      "src/"
+    ],
     "testEnvironment": "node",
     "transform": {
       "^.+\\.jsx?$": "babel-jest"
