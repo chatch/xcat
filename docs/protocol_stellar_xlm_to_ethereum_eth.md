@@ -1,119 +1,192 @@
-# Stellar XLM to Ethereum ETH Token Swaps
+# Stellar XLM to Ethereum ETH Cross-chain Trades
 
-** DRAFT v0.1.2**
+Version: 0.1.3
 
-This protocol supports atomic trades/swaps between the native tokens of Stellar and Ethereum.
+This protocol supports atomic cross-chain trades between the native tokens of Stellar and Ethereum.
 
-Two scenarios are described below. Scenario 1 is initiated from Stellar and Scenario 2 is initiated from Ethereum.
+It is based on the [TierNolan protocol](https://bitcointalk.org/index.php?topic=193281.msg2224949#msg2224949)
+but instead of using Bitcoin Script it uses Stellar
+[hash(x) signers](https://www.stellar.org/developers/guides/concepts/multi-sig.html#hashx)
+and
+[time bounded transactions](https://www.stellar.org/developers/guides/concepts/transactions.html#time-bounds)
+and for Ethereum a Solidity [hashed timelock smart contract](https://github.com/chatch/hashed-timelock-contract-ethereum/blob/master/contracts/HashedTimelock.sol).
 
+Two scenarios are described below:
+* Scenario 1 is initiated from Stellar.
+* Scenario 2 is initiated from Ethereum.
 
-## Scenario 1 (S1): Swap initiated by XLM holder on Stellar
+### Note
+
+* all hashes are SHA-2 SHA-256 hashes
+* Ethereum HashedTimelock refers to
+  [this Ethereum smart contract](https://github.com/chatch/hashed-timelock-contract-ethereum/blob/master/contracts/HashedTimelock.sol)
+* 'Preimage' and 'x' are used interchangeably to refer to the generated secret preimage, the hash of which is used in the hashlocks
+* 'HTLC' refers to Hashed Timelock Contracts
+
+## Scenario 1 (S1): Trade initiated by XLM holder on Stellar
 
 ### Summary
-* Alice initiates the setup process on Stellar side
-* Alice sells XLM to Bob
-* Bob sells ETH to Alice
+
+* Alice is selling XLM to Bob
+* Bob is selling ETH to Alice
+* Alice initiates the setup process creating the secret preimage x
+* Alice creates a holding account on Stellar to hold the XLM
+* Bob creates a new HTLC on the Ethereum HTLC contract to hold the ETH
+* Alice claims ETH revealing x to the HTLC contract on Ethereum
+* Bob takes the revealed x and claims XLM from the Stellar holding account
 
 ### Sequence Diagram
+
 ![sequence diagram](uml/protocol-scenario1.png)
 
 ### Protocol
 
 1. Agreement
-    1.  Agree to terms over some channel (telegram, phone call, whatever ..) and define the amounts to trade
-    2.  Exchange Stellar and Ethereum public addresses. Each user must have 1 account on each network
-    3.  Define this in a trade.json file [JSON schema](https://github.com/chatch/xcat/blob/master/src/schema/trade.json)
+   1. Agree to terms over some channel (telegram, phone call, whatever ..) and define the amounts to trade
+   2. Exchange Stellar and Ethereum public addresses. Each trader must have 1 account on each network
+   3. Define trade details in a trade.json file that conforms to the [JSON schema](https://github.com/chatch/xcat/blob/master/src/schema/trade.json)
 2. Setup
-    1. Alice generates secret x
-    2. [Stellar] Alice submits Tx [see in Laboratory](https://www.stellar.org/laboratory/#txbuilder?params=eyJhdHRyaWJ1dGVzIjp7InNvdXJjZUFjY291bnQiOiJHQ09DRDJTVkJFT0I0UFdNUzdGRU9GTTI3VFBTWkJPNUxGUjI0TkJNVDZRNzNPSVVLQktES0ZCUyIsInNlcXVlbmNlIjoiMTcxNzY2NTIyNTM0OTUyOTgifSwib3BlcmF0aW9ucyI6W3siaWQiOjAsImF0dHJpYnV0ZXMiOnsic3RhcnRpbmdCYWxhbmNlIjoiNDAiLCJkZXN0aW5hdGlvbiI6IkdEWFpaRzJJS0UyTUZBUUFXQ01WSVgyWEJITTJXV0dDS1YzWVBLWVBNU09WN05HVkVVQjQ3NVBNIn0sIm5hbWUiOiJjcmVhdGVBY2NvdW50In0seyJpZCI6MTUwNTU1Mjk0OTIyOCwibmFtZSI6InNldE9wdGlvbnMiLCJhdHRyaWJ1dGVzIjp7InNpZ25lciI6eyJ0eXBlIjoiZWQyNTUxOVB1YmxpY0tleSIsImNvbnRlbnQiOiJHQ0c1MkIyTEJZVlRQVUNJUUZEQjdWQlhBUks0T1VWNU5TRVE1UjZUMzQzRlc3R1I0TUJVTTNWNiIsIndlaWdodCI6IjEifSwic291cmNlQWNjb3VudCI6IkdEWFpaRzJJS0UyTUZBUUFXQ01WSVgyWEJITTJXV0dDS1YzWVBLWVBNU09WN05HVkVVQjQ3NVBNIn19LHsiaWQiOjE1MDU1NTM5NDI4MjEsIm5hbWUiOiJzZXRPcHRpb25zIiwiYXR0cmlidXRlcyI6eyJtYXN0ZXJXZWlnaHQiOiIwIiwibG93VGhyZXNob2xkIjoiMiIsIm1lZFRocmVzaG9sZCI6IjIiLCJoaWdoVGhyZXNob2xkIjoiMiIsInNpZ25lciI6eyJ0eXBlIjoic2hhMjU2SGFzaCIsImNvbnRlbnQiOiJjYTAyMGRmZGQxOGJmOTAxY2EyZTdlYjZiNzAxOTRkYTkzNjhiYTQ5NzFkN2JiODU0NWY0NmQ5YzRmN2U1NTBlIiwid2VpZ2h0IjoiMSJ9LCJzb3VyY2VBY2NvdW50IjoiR0RYWlpHMklLRTJNRkFRQVdDTVZJWDJYQkhNMldXR0NLVjNZUEtZUE1TT1Y3TkdWRVVCNDc1UE0ifX1dfQ%3D%3D&network=test):
-    ```
-      Operation: Create Account
-                    Destination: hold acc
-                    Balance: 40 (includes +10 for hash(x) signer and +10 for Bob signer)
-      Operation: Set Options:
-                    Source: hold acc
-                    Signers: Bob w/ weight 1
-      Operation: Set Options:
-                    Source: hold acc
-                    Master Weight:    0
-                    Threshold(ALL Levels): 2
-                    Signers: hash(x) w/ weight 1
-      Signatures: Alice, hold account
-    ```
-      
-    3. [Stellar] Bob creates and signs tx envelope for a refund tx for Alice and sends it to her [see in Laboratory](https://www.stellar.org/laboratory/#txbuilder?params=eyJhdHRyaWJ1dGVzIjp7InNvdXJjZUFjY291bnQiOiJHQTZWVjJDUklQVldBRkJKVlJYNjJZMkRNUTRDQlhXV1I3VE40T1dKUEVVWlZNU1VJUDM1U1lZTiIsInNlcXVlbmNlIjoiMTY4ODIwNDMyNjY3OTM0NzUiLCJtaW5UaW1lIjoiMTUwNTU3NDg3OCJ9LCJvcGVyYXRpb25zIjpbeyJpZCI6MCwiYXR0cmlidXRlcyI6eyJkZXN0aW5hdGlvbiI6IkdDVVZRM0FEVUJVVFg2NjI3VjI3SEVaSk9DR1BTQUZRS1FCWjVRQVBWVks3VFFVNUNFTUc1TjZLIiwiYXNzZXQiOnsidHlwZSI6Im5hdGl2ZSJ9LCJhbW91bnQiOiI0NDQifSwibmFtZSI6InBheW1lbnQifV19&network=test)):
-    ```
-    Source: holding account
-      Time bound: 6h from now
-      Sequence: holding account current sequence
-      Operation: Account Merge
-        Destination: Alice
-      Signatures: Bob
-    ```
+   1. Alice generates a secret preimage x
+   2. [Stellar] Alice generates a new address for the holding account
+   3. [Stellar] Alice creates holding account submitting this transaction:
+   ```yaml
+     source: Alice
+     sequence: Alice current sequence
+     operations:
+       - type: createAccount
+         destination: holdingAccount    # address created in 2.2 above
+         balance: 4 * base_reserve      # 4 = 2 + signer hashx + signer bob
+       - type: setOptions
+         source: holdingAccount
+         signer:
+           - ed25519PublicKey: Bob
+           - weight: 1
+       - type: setOptions
+         source: holdingAccount
+         masterWeight: 0
+         lowThreshold: 2
+         medThreshold: 2
+         highThreshold: 2
+         signer:
+           - sha256Hash: hash(x)
+           - weight: 1
+     sign: Alice
+     sign: holdingAccount
+   ```
 
-    4. [Stellar] Alice submits Tx moving agreed XLM into the holding account:
-    ```
-      Source: Alice
-      Operation: Payment to Holding Account
-        Amount: agreed amount of XLM
-    ```
+   4. [Stellar] Bob creates a refund tx envelope and signs and sends it to Alice:
+   ```yaml
+     source: holdingAccount
+     sequence: holdingAccount current sequence
+     timebounds:
+       - minTime: now + N minutes
+       - maxTime: 0
+     operations:
+       - type: accountMerge
+         destination: Alice
+     sign: Bob
+   ```
 
-    5. [Ethereum] Bob calls newContract() on Ethereum hashed timelock contract:
-    ```
-      receiver = Alices Ethereum address
-      hashLock = hash(x)
-      timelock = 6h from now
-      msg.value = agreed ETH amount
-    ```
-3. Exchange
-    1. [Ethereum] Alice calls withdraw() on the contract revealing x
-       this sends the ETH to her account
+   5. [Stellar] Alice submits Tx moving agreed XLM into the holding account:
+   ```yaml
+     source: Alice
+     sequence: Alice current sequence
+     operations:
+       - type: payment
+         destination: holdingAccount
+         asset: XLM
+         amount: agreed amount
+     sign: Alice
+   ```
 
-    2. [Stellar] Bob now knows x and submits a TX to Stellar to get funds:
-    ```
-      Source: Holding Account
-      Operation: Account Merge
-        Destination: Bob
-      Signatures: bob, x
-    ```
+   6. [Ethereum] Bob calls newContract() on the HashedTimelock. This creates a
+    new 32 byte HTLC id. Alice can scan the blockchain to retrieve this.
+   ```yaml
+     newContract:
+       - _receiver: Alice's address (Ethereum)
+         _hashlock: hash(x)
+         _timelock: now + N / 2 minutes         # N from step 2.4 above
+         options:
+           - from: Bob
+           - value: agreed amount
+   ```
+
+3. Trade
+
+   1. [Ethereum] Alice claims ETH - calls withdraw() on the contract revealing x:
+
+      ```yaml
+       withdraw:
+        - _contractId: <HTLC id>
+          _preimage: x
+      ```
+
+   2. [Stellar] Bob claims XLM - now knows x and submits a transaction to Stellar to get funds:
+
+   ```yaml
+     source: holdingAccount
+     sequence: holdingAccount current sequence
+     operations:
+       - type: accountMerge
+         destination: Bob
+     sign: Bob
+     signHashX: x
+   ```
 
 NOTES:
-1. If nothing happens after 2.4 Alice can get a refund after 'Time Bound' time has passed by adding a signature x to the transaction Bob gave here in 2.3
-2. If nothing happens after 2.5 Bob can get a refund after timelock time has passed by calling refund() on the Ethereum smart contract
+1. If nothing happens after 2.5 Alice can get a refund after N minutes time has
+   passed by adding a signature x to the transaction Bob gave here in 2.4.
+2. If nothing happens after 2.6 Bob can get a refund after N / 2 minutes time
+   has passed by calling refund() on the Ethereum smart contract.
 
-
-## Scenario 2 (S2): Swap initiated by ETH holder on Ethereum
+## Scenario 2 (S2): Trade initiated by ETH holder on Ethereum
 
 ### Summary
-* Bob initiates the setup process on Ethereum side
-* Alice sells XLM to Bob
-* Bob sells ETH to Alice
+
+* Alice is selling XLM to Bob
+* Bob is selling ETH to Alice
+* Bob initiates the setup process creating the secret preimage x
+* Bob creates a new HTLC on the Ethereum HTLC contract to hold the ETH
+* Alice creates a holding account on Stellar to hold the XLM
+* Bob claims XLM in the holding account revealing x on Stellar
+* Alice takes the revealed x and claims ETH from the HTLC on Ethereum
 
 ### Protocol
 
 1. Agreement
-  * same as in S1 1
+ * same as in S1 1
 2. Setup
-    1. Bob generates secret x
-    2. [Ethereum] Bob calls newContract() on Ethereum hashed timelock contract:
-      * same as 2.5 in S1 - but Bob is aware of x here
-    3. [Stellar] Alice submits Tx setting up Stellar holding account:
-      * same as in 2.2 in S1 except that signers are Bob and Alice (instead Bob and hash(x))
-    4. [Stellar] Bob creates and signs tx envelope and gives it to Alice (but doesn't submit to network):
-      * same as in 2.3 in S1 - he signs the envelope
-    5. [Stellar] Alice submits Tx moving agreed XLM into the holding account:
-      * same as in 2.5 in S1
+   1. Bob generates secret x
+   2. [Ethereum] Bob creates new HTLC on Ethereum getting a contract id:
+    * same as 2.6 in S1 expect:
+       * timelock is N minutes
+       * it's Bob who knows x
+   3. [Stellar] Alice sets up Stellar holding account:
+    * same as in 2.2 and 2.3 in S1 except that signers are Bob and Alice (instead Bob and hash(x))
+   4. [Stellar] Bob creates and signs a refund tx envelope for Alice:
+    * same as in 2.4 in S1 except timelock is N / 2 minutes
+   5. [Stellar] Alice submits a transaction moving agreed XLM into the holding account:
+    * same as in 2.5 in S1
 3. Exchange
-    1. [Stellar] Bob submits TX to Stellar claiming his funds and revealing x:
-    ```
-    Source: Holding Account
-    Operation: Account Merge
-      Destination: Bob
-    Signatures: bob, x
-    ```
-    2. [Ethereum] Alice calls withdraw() (now she knows x from Bobs Stellar tx)
-       this sends the ETH to her account
+   1. [Stellar] Bob claims XLM revealing x:
+   ```yaml
+     source: holdingAccount
+     sequence: holdingAccount sequence
+     operations:
+       - type: accountMerge
+         destination: Bob
+     sign: Bob
+     signHashX: x
+   ```
+   2. [Ethereum] Alice claims ETH - calls withdraw() (uses x from the last step)
+   ```yaml
+     withdraw:
+       - _contractId: <HTLC id>
+         _preimage: x
+   ```
 
 NOTES:
-1. If nothing happens after S2 2.4 Bob can get a refund after timelock time has passed by calling refund() on the Ethereum smart contract
-2. If nothing happens after S2 2.5 Alice can get a refund after the timelock expires by signing the transaction Bob gave her in S1 2.4
+1. If nothing happens after S2 2.2 Bob can get a refund after timelock time has
+   passed by calling refund() on the Ethereum smart contract.
+2. If nothing happens after S2 2.5 Alice can get a refund after the timelock
+   expires by signing the transaction Bob gave her in S2 2.4.
