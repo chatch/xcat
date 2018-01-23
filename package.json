@@ -1,7 +1,8 @@
 {
   "name": "xcat",
   "version": "0.0.2",
-  "description": "Cross chain atomic trades protocol and api for trades between Stellar and Ethereum",
+  "description":
+    "Cross chain atomic trades protocol and api for trades between Stellar and Ethereum",
   "repository": "chatch/xcat",
   "license": "GPL-3.0",
   "author": {
@@ -18,7 +19,8 @@
     "pretest": "eslint src --fix",
     "test": "jest src",
     "test-watch": "jest src --watch",
-    "test-protocol": "node_modules/babel-cli/bin/babel-node.js integration-test/protocol-scenario1.js"
+    "test-protocol":
+      "node_modules/babel-cli/bin/babel-node.js integration-test/protocol-xlm-eth-scenario-1.js"
   },
   "keywords": [
     "crosschain",
@@ -31,7 +33,7 @@
   "dependencies": {
     "ajv": "^5.2.2",
     "bluebird": "^3.5.0",
-    "ethereum-htlc": "^0.0.4",
+    "ethereum-htlc": "^0.0.5",
     "human-readable-ids": "^1.0.3",
     "lodash": "^4.17.4",
     "stellar-sdk": "0.7.3",
@@ -49,13 +51,9 @@
     "jest-cli": "^21.0.0",
     "nsp": "^2.6.3"
   },
-  "files": [
-    "lib"
-  ],
+  "files": ["lib"],
   "jest": {
-    "roots": [
-      "src/"
-    ],
+    "roots": ["src/"],
     "testEnvironment": "node",
     "transform": {
       "^.+\\.jsx?$": "babel-jest"

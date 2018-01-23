@@ -59,6 +59,7 @@ class Stellar {
   constructor(sdk, network) {
     this.sdk = sdk
     this.server = initServer(sdk, network)
+    this.getBaseReserve().then(reserve => (this.baseReserve = reserve)) // TODO: move this to a static initaliser
   }
 
   async createHoldingAccount(
@@ -85,8 +86,8 @@ class Stellar {
     tb.addOperation(
       this.sdk.Operation.createAccount({
         destination: newAccKeypair.publicKey(),
-        startingBalance: '40', // +20 base; +10 hash(x) signer; +10 buyer signer
-      }) // TODO: don't use 10 .. pull value of base from latest ledger
+        startingBalance: String(4 * this.baseReserve), // 2 base + 1 hash(x) signer +1 buyer signer
+      })
     )
 
     // Op2: Add buyer as signer on holding account
@@ -288,6 +289,15 @@ class Stellar {
 
   async loadAccount(publicKey) {
     return this.server.loadAccount(publicKey)
+  }
+
+  async getBaseReserve() {
+    const {records} = await this.server
+      .ledgers()
+      .order('desc')
+      .limit(1)
+      .call()
+    return Number(records[0].base_reserve)
   }
 
   async getBalance(publicKey) {

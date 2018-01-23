@@ -27,27 +27,30 @@ const eBuyerAddr = web3.eth.accounts[5]
 /*
  * Stellar Accounts
  */
-const sBuyerKP = sdk.Keypair.random()
 const sSellerKP = sdk.Keypair.random()
+const sBuyerKP = sdk.Keypair.random()
+
+/*
+ * Hashlock preimage and hash for the trade
+ */
+const {secret: preImageStr, hash: hashXStr} = newSecretHashPair()
 
 /*
  * Trade definition
  */
-const {secret: preImageStr, hash: hashXStr} = newSecretHashPair()
-
 const initialTrade = {
   initialSide: Protocol.TradeSide.STELLAR,
   timelock: Date.now() + 120,
-  commitment: hashXStr.substring(2),
+  commitment: hashXStr.substring(2), // slice off prefix '0x'
   stellar: {
     token: 'XLM',
-    amount: 200.0,
+    amount: 100.0,
     depositor: sSellerKP.publicKey(),
     withdrawer: sBuyerKP.publicKey(),
   },
   ethereum: {
     token: 'ETH',
-    amount: 0.01,
+    amount: 0.05,
     depositor: eSellerAddr,
     withdrawer: eBuyerAddr,
   },
@@ -80,7 +83,7 @@ const log = msg => console.info(`INFO: ${msg}`)
 
 const main = async () => {
   /*
-   * Party 1 initiates trade setting up the Stellar holding account (2.2)
+   * Party 1 initiates trade setting up the Stellar holding account (2.3)
    */
   const config1 = new Config(configParty1)
   let trade1 = new Trade(initialTrade)
@@ -108,14 +111,14 @@ const main = async () => {
   log(`party2 imported and checked the trade status`)
 
   /*
-   * Party 2 generates the refund tx for Party 1 (2.3)
+   * Party 2 generates the refund tx envelope for Party 1 (2.4)
    */
   trade2.stellar.refundTx = await protocol2.stellarRefundTx()
   expect(await protocol2.status()).toEqual(Protocol.Status.STELLAR_REFUND_TX)
   log(`refund tx for party 1 created: [${trade2.stellar.refundTx}]`)
 
   /*
-   * Party 1 receives the refund tx and deposits XLM into holding account (2.4)
+   * Party 1 receives the refund tx then deposits XLM into holding account (2.5)
    */
   trade1.stellar.refundTx = trade2.stellar.refundTx // party 2 sends tx to party 1
   expect(await protocol1.status()).toEqual(Protocol.Status.STELLAR_REFUND_TX)
@@ -127,7 +130,7 @@ const main = async () => {
   log(`party1 deposited XLM`)
 
   /*
-   * Party 2 creates the HTLC and deposits ETH (2.5)
+   * Party 2 creates the HTLC and deposits ETH (2.6)
    */
   const htlcId = await protocol2.ethereumPrepare()
   log(`htlc created: ${htlcId}`)
@@ -143,7 +146,7 @@ const main = async () => {
   expect(await protocol2.status()).toEqual(Protocol.Status.ETHEREUM_WITHDRAW)
 
   /*
-   * Party 2 withdraws the XLM revealing the preimage (3.1)
+   * Party 2 withdraws the XLM with the revealed preimage (3.2)
    */
   // TODO: pull the preimage from the events log ...
   //        for now cheat and just plug it in ..

@@ -37,9 +37,11 @@ const validateSetup = (web3, htlcContractObj, htlcContractAddr) => {
 
   if (htlcBytecode !== htlcContractObj.deployedBytecode)
     throw new Error(
-      `Wrong code deployed at HashedTimelock deployment address ` +
+      `Wrong code deployed at HashedTimelock deployment address. The ` +
+        `deployed contract should match the bytecode in the ethereum-htlc ` +
+        `module abi file. ` +
         `[${htlcContractAddr}]\n\nExpected:[\n` +
-        `[${htlcContractObj.deployedBytecode}]\n\nGot:[\n${htlcBytecode}\n]\n`
+        `[${htlcContractObj.deployedBytecode}]\n\nGot:[\n${htlcBytecode}]\n`
     )
 }
 
@@ -116,7 +118,7 @@ class Ethereum {
   }
 
   /**
-   * Try find a trade contract given contrace details. Looks up LogNewContract
+   * Try find a trade contract given contrace details. Looks up LogHTLCNew
    * events to discover a matching contract.
    *
    * @return Promise with contractId of matching contract
@@ -129,7 +131,7 @@ class Ethereum {
       hashlock: hashlock,
       timelock: timelock,
     }
-    const event = this.htlcWeb3.LogNewContract(filter)
+    const event = this.htlcWeb3.LogHTLCNew(filter)
     event.get = Promise.promisify(event.get)
     return event
       .get()
